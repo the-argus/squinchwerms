@@ -8,10 +8,13 @@ const universal_flags = &[_][]const u8{
     "-fno-exceptions",
     "-fno-rtti",
     "-DCP_USE_DOUBLES=0",
+    "-std=c++20",
 };
 
 const cpp_sources = &[_][]const u8{
     "src/main.cpp",
+    "src/allo_impl.cpp",
+    "src/level.cpp",
 };
 
 pub fn build(b: *std.Build) !void {

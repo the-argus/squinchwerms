@@ -8,12 +8,12 @@
             .hash = "122016568d000bacabc11c876dbee168ca6c736a6d1925ee612a63b150cb22518a18",
         },
         .ziglike = .{
-            .url = "https://github.com/the-argus/ziglike/archive/204df1d726e1cf9d7c92ba59b836095846c50032.tar.gz",
-            .hash = "122096e6553d657f580c78b028818fb23600951d8fd4af8828f3f5353e6656562c57",
+            .url = "https://github.com/the-argus/ziglike/archive/7f3ce1e0bd3253a45959739d1f6a6cef6d7c2ec3.tar.gz",
+            .hash = "1220986223fb204be0679b50e43a9d2cbcaa7fca701b43ff800034e655e86d0f0f65",
         },
         .allo = .{
-            .url = "https://github.com/the-argus/allo/archive/948f69d3ad479106caac35d50d858992d99240bc.tar.gz",
-            .hash = "1220245db7393a1159457508d087dc760a89e2c3e4c3acd801cfd830493e7d9f016d",
+            .url = "https://github.com/the-argus/allo/archive/407ca1680e06145e7daa0dcae00d0322f93029c5.tar.gz",
+            .hash = "12205d2bf0b373159454d9311db2e43a1d4d5d1c3846f0f72cf41ea23ed4ceab3684",
         },
         .raylib = .{
             .url = "https://github.com/raysan5/raylib/archive/e7664d5684f4b7c487d2a08645f23a1d0485f9e7.tar.gz",
