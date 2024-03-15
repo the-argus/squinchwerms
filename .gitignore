@@ -1,0 +1,6 @@
+compile_commands.json
+.direnv/
+.cache/
+vgcore*
+zig-cache/
+zig-out/

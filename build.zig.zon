@@ -13,7 +13,7 @@
         },
         .allo = .{
             .url = "https://github.com/the-argus/allo/archive/948f69d3ad479106caac35d50d858992d99240bc.tar.gz",
-            .hash = "1220aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            .hash = "1220245db7393a1159457508d087dc760a89e2c3e4c3acd801cfd830493e7d9f016d",
         },
         .raylib = .{
             .url = "https://github.com/raysan5/raylib/archive/e7664d5684f4b7c487d2a08645f23a1d0485f9e7.tar.gz",
