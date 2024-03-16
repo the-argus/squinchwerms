@@ -9,12 +9,15 @@ const universal_flags = &[_][]const u8{
     "-fno-rtti",
     "-DCP_USE_DOUBLES=0",
     "-std=c++20",
+    "-Isrc/",
+    "-DFMT_HEADER_ONLY",
 };
 
 const cpp_sources = &[_][]const u8{
     "src/main.cpp",
     "src/allo_impl.cpp",
     "src/level.cpp",
+    "src/natural_log/natural_log.cpp",
 };
 
 pub fn build(b: *std.Build) !void {
@@ -43,6 +46,10 @@ pub fn build(b: *std.Build) !void {
         try flags.append(b.fmt("-I{s}", .{allo_include_path}));
         break :block dep;
     };
+
+    // import fmt
+    const fmt = b.dependency("fmt", .{});
+    const fmt_include_path = b.pathJoin(&.{ fmt.builder.install_path, "include" });
 
     const raylib = b.dependency("raylib", .{ .target = target, .optimize = optimize }).artifact("raylib");
     const chipmunk = b.dependency("chipmunk2d", .{ .target = target, .optimize = optimize }).artifact("chipmunk");
@@ -73,6 +80,11 @@ pub fn build(b: *std.Build) !void {
     exe.linkLibCpp();
     exe.linkLibrary(raylib);
     exe.linkLibrary(chipmunk);
+
+    exe.step.dependOn(fmt.builder.getInstallStep());
+    exe.addIncludePath(.{
+        .path = fmt_include_path,
+    });
 
     b.installArtifact(exe);
 

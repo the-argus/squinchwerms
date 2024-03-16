@@ -1,6 +1,9 @@
+// these two macros are needed so that we can allocate a lib::Space in an
+// allocator
 #define ALLO_ALLOW_NONTRIVIAL_COPY
 #define ALLO_ALLOW_DESTRUCTORS
 #include "level.h"
+#include "natural_log/natural_log.h"
 #include "space.h"
 #include "vect.h"
 #include <allo.h>
@@ -16,6 +19,7 @@ static Camera2D camera;
 
 int main()
 {
+    ln::init();
     InitWindow(render_size.x, render_size.y, "Squinchwerms");
     SetTargetFPS(fps);
 
@@ -27,6 +31,7 @@ int main()
 
     // initialize level allocators
     if (!werm::init_level().okay()) {
+        LN_FATAL("Unable to initialize level");
         std::abort();
     }
 
@@ -38,8 +43,11 @@ int main()
     auto res = werm::level_allocator().register_destruction_callback(
         [](void *data) { ((lib::Space *)data)->lib::Space::~Space(); }, &space);
 
-    if (!res.okay())
+    if (!res.okay()) {
+        LN_FATAL("failed to alloc destruction callback for space, which means "
+                 "it wouldn't get cleaned up on level change. Aborting.");
         std::abort();
+    }
 
     while (!WindowShouldClose()) {
         BeginDrawing();
