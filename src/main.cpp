@@ -1,3 +1,5 @@
+#define ALLO_ALLOW_NONTRIVIAL_COPY
+#define ALLO_ALLOW_DESTRUCTORS
 #include "level.h"
 #include "space.h"
 #include "vect.h"
