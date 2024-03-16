@@ -18,6 +18,8 @@ void clear_level() noexcept
 {
     lvlheap.reset();
     lvlstack.reset();
+    lvlres_stack.reset();
+    lvlres_heap.reset();
 }
 
 allocation_status_t init_level() noexcept

@@ -9,6 +9,8 @@ const universal_flags = &[_][]const u8{
     "-fno-rtti",
     "-DCP_USE_DOUBLES=0",
     "-std=c++20",
+    "-DALLO_ALLOW_NONTRIVIAL_COPY",
+    "-DALLO_ALLOW_DESTRUCTORS",
 };
 
 const cpp_sources = &[_][]const u8{
