@@ -25,7 +25,7 @@ void update_physics() noexcept { space.value().step(1 / 60.0f); }
 
 BodyRef static_body() noexcept { return space.value().get_static_body(); }
 
-allocation_status_t init_physics(allo::AllocatorDynRef parent) noexcept
+allo::allocation_status_t init_physics(allo::AllocatorDynRef parent) noexcept
 {
     using namespace allo;
 

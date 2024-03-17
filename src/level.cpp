@@ -22,7 +22,7 @@ void clear_level() noexcept
     lvlres_heap.reset();
 }
 
-allocation_status_t init_level() noexcept
+allo::allocation_status_t init_level() noexcept
 {
     using namespace allo;
     auto static_reservation = reservation_allocator_t::make(

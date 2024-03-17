@@ -7,5 +7,5 @@ namespace werm {
 allo::HeapAllocatorDynRef level_heap() noexcept;
 allo::AllocatorDynRef level_allocator() noexcept;
 void clear_level() noexcept;
-allocation_status_t init_level() noexcept;
+allo::allocation_status_t init_level() noexcept;
 } // namespace werm

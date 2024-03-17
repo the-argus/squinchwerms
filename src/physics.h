@@ -24,7 +24,7 @@ void update_physics() noexcept;
 
 BodyRef static_body() noexcept;
 
-allocation_status_t init_physics(allo::AllocatorDynRef parent) noexcept;
+allo::allocation_status_t init_physics(allo::AllocatorDynRef parent) noexcept;
 
 zl::opt<BodyRef> create_body(const lib::Body::body_options_t &options) noexcept;
 
