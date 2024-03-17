@@ -20,10 +20,11 @@ void Body::set_angle(float angle) { cpBodySetAngle(this, angle); }
 // read-only
 lib::Body::Type Body::type() { return lib::Body::Type(cpBodyGetType(this)); }
 
-void Body::_add_to_space(Space *space)
+void Body::_add_to_space(Space *_space)
 {
     // HACK: this shouldnt be reinterpret_cast
-    cpSpaceAddBody(reinterpret_cast<cpSpace *>(space), this);
+    cpSpaceAddBody(reinterpret_cast<cpSpace *>(_space), this);
+    space = reinterpret_cast<cpSpace *>(_space);
 }
 
 void Body::free()

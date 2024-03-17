@@ -48,10 +48,12 @@ int main()
             .value();
     end->set_position({100, 100});
 
-    // cpDampedSpring spring;
-    // cpSpaceAddConstraint
-    // begin->connect_with_damped_spring(
-    //     &spring, end, {.length = 10, .stiffness = 1, .damping = 1});
+    // spring exists for the whole level so just put it on the level stack
+    werm::DampedSpringRef spring =
+        werm::connect_with_damped_spring(
+            werm::level_allocator(), begin, end,
+            {.length = 10, .stiffness = 1, .damping = 1})
+            .value();
 
     lib::Rect floor = {{0, 0}, {800, 10}};
     werm::create_square(werm::static_body(), {.bounding = floor, .radius = 1});

@@ -12,6 +12,13 @@ using BodyRef = lib::Body *;
 using ShapeRef = lib::Shape *;
 using PolyShapeRef = lib::PolyShape *;
 using SegmentShapeRef = lib::SegmentShape *;
+using DampedSpringRef = cpDampedSpring *;
+
+// allocate a damped spring and connect two bodies with it.
+zl::opt<DampedSpringRef>
+connect_with_damped_spring(allo::AllocatorDynRef allocator, BodyRef a,
+                           BodyRef b,
+                           const lib::Body::spring_options_t &options) noexcept;
 
 void update_physics() noexcept;
 

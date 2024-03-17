@@ -117,6 +117,19 @@ allocation_status_t init_physics(allo::AllocatorDynRef parent) noexcept
     return AllocationStatusCode::Okay;
 }
 
+zl::opt<DampedSpringRef>
+connect_with_damped_spring(allo::AllocatorDynRef allocator, BodyRef a,
+                           BodyRef b,
+                           const lib::Body::spring_options_t &options) noexcept
+{
+    auto res = allo::alloc_one<cpDampedSpring>(allocator);
+    if (!res.okay())
+        return {};
+    DampedSpringRef result = &res.release();
+    a->connect_with_damped_spring(result, b, options);
+    return result;
+}
+
 zl::opt<BodyRef> create_body(const lib::Body::body_options_t &options) noexcept
 {
     auto mbody = allo::construct_one<lib::Body>(bodies.value(), options);
@@ -130,6 +143,7 @@ zl::opt<BodyRef> create_body(const lib::Body::body_options_t &options) noexcept
 void destroy_body(BodyRef ref) noexcept
 {
     space.value().remove(*ref);
+    ref->free();
     ref->lib::Body::~Body();
     allo::free_one(bodies.value(), ref);
 }
@@ -184,6 +198,7 @@ void destroy_shape(ShapeRef ref) noexcept
 void destroy_poly_shape(PolyShapeRef ref) noexcept
 {
     space.value().remove(*ref->parent_cast());
+    ref->parent_cast()->free();
     ref->lib::PolyShape::~PolyShape();
     allo::free_one(polys.value(), ref);
 }
@@ -191,6 +206,7 @@ void destroy_poly_shape(PolyShapeRef ref) noexcept
 void destroy_segment_shape(SegmentShapeRef ref) noexcept
 {
     space.value().remove(*ref->parent_cast());
+    ref->parent_cast()->free();
     ref->lib::SegmentShape::~SegmentShape();
     allo::free_one(segments.value(), ref);
 }

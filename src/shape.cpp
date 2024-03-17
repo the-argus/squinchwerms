@@ -2,9 +2,10 @@
 #include "body.h"
 
 namespace lib {
-void Shape::_add_to_space(Space *space)
+void Shape::_add_to_space(Space *_space)
 {
-    cpSpaceAddShape(reinterpret_cast<cpSpace *>(space), this);
+    cpSpaceAddShape(reinterpret_cast<cpSpace *>(_space), this);
+    space = reinterpret_cast<cpSpace *>(_space);
 }
 
 float Shape::friction() { return cpShapeGetFriction(this); }
