@@ -117,11 +117,14 @@ zl::opt<BodyRef> create_body(lib::Body::body_options_t &options) noexcept
     auto mbody = allo::construct_one<lib::Body>(bodies.value(), options);
     if (!mbody.okay())
         return {};
-    return zl::opt<BodyRef>{std::in_place, &mbody.release()};
+    auto &body = mbody.release();
+    space.value().add(body);
+    return zl::opt<BodyRef>{std::in_place, &body};
 }
 
 void destroy_body(BodyRef ref) noexcept
 {
+    space.value().remove(*ref);
     ref->lib::Body::~Body();
     allo::free_one(bodies.value(), ref);
 }
@@ -134,7 +137,9 @@ create_segment_shape(BodyRef body,
                                                          *body, options);
     if (!mshape.okay())
         return {};
-    return zl::opt<SegmentShapeRef>{std::in_place, &mshape.release()};
+    auto &shape = mshape.release();
+    space.value().add(*shape.parent_cast());
+    return zl::opt<SegmentShapeRef>{std::in_place, &shape};
 }
 
 zl::opt<PolyShapeRef>
@@ -145,7 +150,9 @@ create_poly_shape(BodyRef body,
         allo::construct_one<lib::PolyShape>(polys.value(), *body, options);
     if (!mshape.okay())
         return {};
-    return zl::opt<PolyShapeRef>{std::in_place, &mshape.release()};
+    auto &shape = mshape.release();
+    space.value().add(*shape.parent_cast());
+    return zl::opt<PolyShapeRef>{std::in_place, &shape};
 }
 
 // NOTE: identical code to create_poly_shape...
@@ -171,12 +178,14 @@ void destroy_shape(ShapeRef ref) noexcept
 }
 void destroy_poly_shape(PolyShapeRef ref) noexcept
 {
+    space.value().remove(*ref->parent_cast());
     ref->lib::PolyShape::~PolyShape();
     allo::free_one(polys.value(), ref);
 }
 
 void destroy_segment_shape(SegmentShapeRef ref) noexcept
 {
+    space.value().remove(*ref->parent_cast());
     ref->lib::SegmentShape::~SegmentShape();
     allo::free_one(segments.value(), ref);
 }
