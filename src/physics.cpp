@@ -20,6 +20,11 @@ static zl::opt<allo::block_allocator_t> segments;
 static zl::opt<lib::Space &> space;
 
 namespace werm {
+
+void update_physics() noexcept { space.value().step(1 / 60.0f); }
+
+BodyRef static_body() noexcept { return space.value().get_static_body(); }
+
 allocation_status_t init_physics(allo::AllocatorDynRef parent) noexcept
 {
     using namespace allo;
@@ -112,7 +117,7 @@ allocation_status_t init_physics(allo::AllocatorDynRef parent) noexcept
     return AllocationStatusCode::Okay;
 }
 
-zl::opt<BodyRef> create_body(lib::Body::body_options_t &options) noexcept
+zl::opt<BodyRef> create_body(const lib::Body::body_options_t &options) noexcept
 {
     auto mbody = allo::construct_one<lib::Body>(bodies.value(), options);
     if (!mbody.okay())

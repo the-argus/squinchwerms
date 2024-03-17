@@ -37,10 +37,36 @@ int main()
         std::abort();
     }
 
+    werm::BodyRef begin =
+        werm::create_body(
+            {.type = lib::Body::Type::DYNAMIC, .mass = 10, .moment = INFINITY})
+            .value();
+    begin->set_position({0, 100});
+    werm::BodyRef end =
+        werm::create_body(
+            {.type = lib::Body::Type::DYNAMIC, .mass = 10, .moment = INFINITY})
+            .value();
+    end->set_position({100, 100});
+
+    // cpDampedSpring spring;
+    // cpSpaceAddConstraint
+    // begin->connect_with_damped_spring(
+    //     &spring, end, {.length = 10, .stiffness = 1, .damping = 1});
+
+    lib::Rect floor = {{0, 0}, {800, 10}};
+    werm::create_square(werm::static_body(), {.bounding = floor, .radius = 1});
+
+    Texture end_tex = LoadTexture("assets/img/werm/end.png");
+    Texture begin_tex = LoadTexture("assets/img/werm/head.png");
+
     while (!WindowShouldClose()) {
+        werm::update_physics();
         BeginDrawing();
         ClearBackground(WHITE);
         BeginMode2D(camera);
+        DrawTextureV(end_tex, end->position(), WHITE);
+        DrawTextureV(begin_tex, begin->position(), WHITE);
+        DrawRectangleRec(floor, WHITE);
         EndMode2D();
         EndDrawing();
     }

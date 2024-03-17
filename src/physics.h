@@ -13,19 +13,31 @@ using ShapeRef = lib::Shape *;
 using PolyShapeRef = lib::PolyShape *;
 using SegmentShapeRef = lib::SegmentShape *;
 
+void update_physics() noexcept;
+
+BodyRef static_body() noexcept;
+
 allocation_status_t init_physics(allo::AllocatorDynRef parent) noexcept;
+
 zl::opt<BodyRef> create_body(const lib::Body::body_options_t &options) noexcept;
+
 void destroy_body(BodyRef) noexcept;
+
 zl::opt<SegmentShapeRef>
 create_segment_shape(BodyRef body,
                      const lib::SegmentShape::options_t &options) noexcept;
+
 zl::opt<PolyShapeRef>
 create_poly_shape(BodyRef body,
                   const lib::PolyShape::default_options_t &options) noexcept;
+
 zl::opt<PolyShapeRef>
 create_square(BodyRef body,
               const lib::PolyShape::square_options_t &options) noexcept;
+
 void destroy_shape(ShapeRef) noexcept;
+
 void destroy_poly_shape(PolyShapeRef) noexcept;
+
 void destroy_segment_shape(SegmentShapeRef) noexcept;
 } // namespace werm
