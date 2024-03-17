@@ -26,7 +26,7 @@ allocation_status_t init_level() noexcept
 {
     using namespace allo;
     auto static_reservation = reservation_allocator_t::make(
-        {.committed = 1, .additional_pages_reserved = 20});
+        {.committed = 100, .additional_pages_reserved = 200});
     if (!static_reservation.okay())
         return static_reservation.err();
     lvlres_stack.emplace(std::move(static_reservation.release()));
@@ -37,7 +37,7 @@ allocation_status_t init_level() noexcept
     });
 
     auto dynamic_reservation = reservation_allocator_t::make(
-        {.committed = 1, .additional_pages_reserved = 20});
+        {.committed = 100, .additional_pages_reserved = 200});
     if (!dynamic_reservation.okay())
         return dynamic_reservation.err();
     lvlres_heap.emplace(std::move(dynamic_reservation.release()));
