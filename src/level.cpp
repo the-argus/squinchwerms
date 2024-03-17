@@ -1,15 +1,14 @@
 #include "level.h"
-#include "natural_log/natural_log.h"
 #include <allo/heap_allocator.h>
-#include <allo/reservation_allocator.h>
+#include <allo/oneshot_allocator.h>
 #include <allo/stack_allocator.h>
 #include <ziglike/defer.h>
 #include <ziglike/opt.h>
+#include <ziglike/zigstdint.h>
 
+static allo::c_allocator_t parent;
 static zl::opt<allo::heap_allocator_t> lvlheap;
 static zl::opt<allo::stack_allocator_t> lvlstack;
-static zl::opt<allo::reservation_allocator_t> lvlres_stack;
-static zl::opt<allo::reservation_allocator_t> lvlres_heap;
 
 namespace werm {
 allo::HeapAllocatorDynRef level_heap() noexcept { return lvlheap.value(); }
@@ -18,59 +17,41 @@ void clear_level() noexcept
 {
     lvlheap.reset();
     lvlstack.reset();
-    lvlres_stack.reset();
-    lvlres_heap.reset();
 }
 
 allo::allocation_status_t init_level() noexcept
 {
     using namespace allo;
-    auto static_reservation = reservation_allocator_t::make({
-        .committed = 100,
-        .additional_pages_reserved = 200,
-        .hint = (void *)0x200000000000,
-    });
-    if (!static_reservation.okay())
-        return static_reservation.err();
-    lvlres_stack.emplace(std::move(static_reservation.release()));
+    {
+        auto mem_res = allo::alloc<u8>(parent, 200UL * 4096);
+        if (!mem_res.okay())
+            return mem_res.err();
+        zl::slice<u8> mem = mem_res.release();
 
-    zl::defer remove_static([]() {
-        lvlres_stack.reset();
-        LN_DEBUG("Failure, deleting static memory reservation for level.");
-    });
+        auto heap_res = heap_allocator_t::make_owned(mem, parent);
+        if (!heap_res.okay()) {
+            allo::free(parent, mem);
+            return heap_res.err();
+        }
+        lvlheap.emplace(std::move(heap_res.release()));
+    }
 
-    auto dynamic_reservation = reservation_allocator_t::make({
-        .committed = 100,
-        .additional_pages_reserved = 200,
-        .hint = (void *)0x300000000000,
-    });
-    if (!dynamic_reservation.okay())
-        return dynamic_reservation.err();
-    lvlres_heap.emplace(std::move(dynamic_reservation.release()));
+    zl::defer remove_heap([]() { lvlheap.reset(); });
 
-    zl::defer remove_dyn([]() {
-        lvlres_heap.reset();
-        LN_DEBUG("Failure, deleting dynamic memory reservation for level.");
-    });
+    {
+        auto mem_res = allo::alloc<u8>(parent, 200UL * 4096);
+        if (!mem_res.okay())
+            return mem_res.err();
+        zl::slice<u8> mem = mem_res.release();
 
-    auto heap_res = heap_allocator_t::make_owned(
-        lvlres_heap.value().current_memory(), lvlres_heap.value());
-    if (!heap_res.okay())
-        return heap_res.err();
-    lvlheap.emplace(std::move(heap_res.release()));
-    zl::defer remove_heap([]() {
-        lvlheap.reset();
-        LN_DEBUG("Failure, deleting heap allocator");
-    });
+        auto stack_res = stack_allocator_t::make(mem, parent);
+        if (!stack_res.okay()) {
+            allo::free(parent, mem);
+            return stack_res.err();
+        }
+        lvlstack.emplace(std::move(stack_res.release()));
+    }
 
-    auto stack_res = stack_allocator_t::make(
-        lvlres_stack.value().current_memory(), lvlres_stack.value());
-    if (!stack_res.okay())
-        return stack_res.err();
-    lvlstack.emplace(std::move(stack_res.release()));
-
-    remove_static.cancel();
-    remove_dyn.cancel();
     remove_heap.cancel();
 
     return AllocationStatusCode::Okay;
