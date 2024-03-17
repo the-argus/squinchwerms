@@ -25,8 +25,11 @@ void clear_level() noexcept
 allo::allocation_status_t init_level() noexcept
 {
     using namespace allo;
-    auto static_reservation = reservation_allocator_t::make(
-        {.committed = 100, .additional_pages_reserved = 200});
+    auto static_reservation = reservation_allocator_t::make({
+        .committed = 100,
+        .additional_pages_reserved = 200,
+        .hint = (void *)0x200000000000,
+    });
     if (!static_reservation.okay())
         return static_reservation.err();
     lvlres_stack.emplace(std::move(static_reservation.release()));
@@ -36,8 +39,11 @@ allo::allocation_status_t init_level() noexcept
         LN_DEBUG("Failure, deleting static memory reservation for level.");
     });
 
-    auto dynamic_reservation = reservation_allocator_t::make(
-        {.committed = 100, .additional_pages_reserved = 200});
+    auto dynamic_reservation = reservation_allocator_t::make({
+        .committed = 100,
+        .additional_pages_reserved = 200,
+        .hint = (void *)0x300000000000,
+    });
     if (!dynamic_reservation.okay())
         return dynamic_reservation.err();
     lvlres_heap.emplace(std::move(dynamic_reservation.release()));
