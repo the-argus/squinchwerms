@@ -11,12 +11,17 @@ const universal_flags = &[_][]const u8{
     "-std=c++20",
     "-Isrc/",
     "-DFMT_HEADER_ONLY",
+    "-DZIGLIKE_OPTIONAL_ALLOW_POINTERS",
 };
 
 const cpp_sources = &[_][]const u8{
     "src/main.cpp",
     "src/allo_impl.cpp",
     "src/level.cpp",
+    "src/physics.cpp",
+    "src/space.cpp",
+    "src/shape.cpp",
+    "src/body.cpp",
     "src/natural_log/natural_log.cpp",
 };
 

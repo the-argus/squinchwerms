@@ -1,14 +1,11 @@
-// these two macros are needed so that we can allocate a lib::Space in an
-// allocator
-#define ALLO_ALLOW_NONTRIVIAL_COPY
-#define ALLO_ALLOW_DESTRUCTORS
 #include "level.h"
 #include "natural_log/natural_log.h"
-#include "space.h"
+#include "physics.h"
 #include "vect.h"
 #include <allo.h>
 #include <cstddef>
 #include <raylib.h>
+#include <ziglike/zigstdint.h>
 
 using namespace lib;
 
@@ -35,17 +32,8 @@ int main()
         std::abort();
     }
 
-    auto ref = werm::level_allocator();
-    cpSpace &space = allo::construct_one<lib::Space>(ref).release();
-
-    // unfortunately, chipmunk allocates other resources which the allocator
-    // doesn't know about, so we have to hook in the cpSpaceDestroy function
-    auto res = werm::level_allocator().register_destruction_callback(
-        [](void *data) { ((lib::Space *)data)->lib::Space::~Space(); }, &space);
-
-    if (!res.okay()) {
-        LN_FATAL("failed to alloc destruction callback for space, which means "
-                 "it wouldn't get cleaned up on level change. Aborting.");
+    if (!werm::init_physics(werm::level_allocator()).okay()) {
+        LN_FATAL("Unable to initialize physics");
         std::abort();
     }
 
