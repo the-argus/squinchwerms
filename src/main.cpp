@@ -62,7 +62,14 @@ int main()
     Texture begin_tex = LoadTexture("assets/img/werm/head.png");
 
     while (!WindowShouldClose()) {
-        werm::update_physics();
+        // clear any frame-specific allocations
+        werm::clear_frame();
+        // update
+        {
+            werm::update_physics();
+        }
+
+        // draw
         BeginDrawing();
         ClearBackground(WHITE);
         BeginMode2D(camera);
