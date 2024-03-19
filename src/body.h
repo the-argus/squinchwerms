@@ -22,7 +22,10 @@ class Body : public ::cpBody
         float moment;
     };
 
-    inline Body(const body_options_t &options) : ::cpBody({})
+    inline Body(const body_options_t &options)
+#ifndef NDEBUG
+        : ::cpBody({})
+#endif
     {
         /// Initialize fields used by chipmunk to determine what type something
         /// is we have to do this here instead of in cpBodySetType because

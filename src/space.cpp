@@ -74,7 +74,7 @@ float Space::get_sleep_time_threshold() const noexcept
 {
     return cpSpaceGetSleepTimeThreshold(this);
 }
-Body *Space::get_static_body() const noexcept
+Body *Space::get_static_body() noexcept
 {
     return static_cast<Body *>(cpSpaceGetStaticBody(this));
 }

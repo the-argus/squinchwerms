@@ -8,7 +8,11 @@ namespace lib {
 class Space : public ::cpSpace
 {
   public:
-    inline Space() noexcept : ::cpSpace({}) { cpSpaceInit(this); }
+    inline Space() noexcept : ::cpSpace({})
+    {
+        void *res = cpSpaceInit(this);
+        assert(res);
+    }
     inline ~Space() noexcept { cpSpaceDestroy(this); };
 
     Space(const Space &other) = delete;
@@ -43,7 +47,7 @@ class Space : public ::cpSpace
     [[nodiscard]] int iterations() const noexcept;
 
     [[nodiscard]] float get_sleep_time_threshold() const noexcept;
-    [[nodiscard]] Body *get_static_body() const noexcept;
+    [[nodiscard]] Body *get_static_body() noexcept;
     [[nodiscard]] float get_current_time_step() const noexcept;
 };
 } // namespace lib
