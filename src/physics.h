@@ -3,7 +3,6 @@
 #include "space.h"
 #include <allo.h>
 #include <allo/block_allocator.h>
-#include <allo/oneshot_allocator.h>
 #include <chipmunk/chipmunk_structs.h>
 #include <ziglike/opt.h>
 
@@ -61,12 +60,10 @@ class PhysicsSystem
   private:
     struct M
     {
-        allo::oneshot_allocator_t bodies_mem;
-        allo::oneshot_allocator_t polys_mem;
-        allo::oneshot_allocator_t segments_mem;
         allo::block_allocator_t bodies;
         allo::block_allocator_t polys;
         allo::block_allocator_t segments;
+		zl::slice<uint8_t> polys_mem;
         lib::Space space;
     } m;
 };

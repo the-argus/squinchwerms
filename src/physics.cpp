@@ -43,74 +43,44 @@ PhysicsSystem::make(allo::AllocatorDynRef parent) noexcept
     // NOTE: the contents of this physics system is uninitialized at this point!
     werm::PhysicsSystem &final = final_res.release();
 
-    // create the oneshot allocator for bodies.
-    // NOTE: this code only exists because block_allocator_t does not have some
-    // function like make_unowned where you can just make a block allocator from
-    // a raw slice. so we have to use oneshot allocator to fake it.
+    // create the block allocator for bodies
     {
         auto mem_bodies_res = alloc<u8>(parent, max_bodies * sizeof(lib::Body));
         if (!mem_bodies_res.okay())
             return mem_bodies_res.err();
-        auto oneshot_bodies_res =
-            oneshot_allocator_t::make(mem_bodies_res.release());
-        if (!oneshot_bodies_res.okay())
-            return oneshot_bodies_res.err();
 
-        // move into the final result here. we could also maybe make
-        // oneshot_allocator_t::make construct the oneshot directly into this
-        // space... but that would require an out variable or some serious
-        // metaprogramming trickery. so im just moving it.
-        new (&final.m.bodies_mem)
-            oneshot_allocator_t(std::move(oneshot_bodies_res.release_ref()));
-    }
-
-    // create the block allocator for bodies
-    {
         auto block_bodies_res = block_allocator_t::make(
-            final.m.bodies_mem.shoot(), final.m.bodies_mem, sizeof(lib::Body));
+            mem_bodies_res.release(), sizeof(lib::Body));
         if (!block_bodies_res.okay())
             return block_bodies_res.err();
         new (&final.m.bodies)
             block_allocator_t(std::move(block_bodies_res.release()));
     }
 
-    // create the oneshot and block allocators for poly shapes
+    // create the block allocator for poly shapes
     {
-        auto mem_polys = alloc<u8>(parent, max_shapes * sizeof(lib::PolyShape));
-        if (!mem_polys.okay())
-            return mem_polys.err();
-        auto oneshot_polys = oneshot_allocator_t::make(mem_polys.release());
-        if (!oneshot_polys.okay())
-            return oneshot_polys.err();
-
-        new (&final.m.polys_mem)
-            oneshot_allocator_t(std::move(oneshot_polys.release()));
-
+        auto mem_polys_res =
+            alloc<u8>(parent, max_shapes * sizeof(lib::PolyShape));
+        if (!mem_polys_res.okay())
+            return mem_polys_res.err();
+        auto mem_polys = mem_polys_res.release();
         auto polys_res =
-            block_allocator_t::make(final.m.polys_mem.shoot(),
-                                    final.m.polys_mem, sizeof(lib::PolyShape));
+            block_allocator_t::make(mem_polys, sizeof(lib::PolyShape));
         if (!polys_res.okay())
             return polys_res.err();
         new (&final.m.polys) block_allocator_t(std::move(polys_res.release()));
+        new (&final.m.polys_mem) zl::slice<uint8_t>(mem_polys);
     }
 
-    // create the oneshot and block allocators for segment shapes
+    // create the block allocator for segment shapes
     {
         auto mem_segments =
             alloc<u8>(parent, max_shapes * sizeof(lib::SegmentShape));
         if (!mem_segments.okay())
             return mem_segments.err();
-        auto oneshot_segments =
-            oneshot_allocator_t::make(mem_segments.release());
-        if (!oneshot_segments.okay())
-            return oneshot_segments.err();
 
-        new (&final.m.segments_mem)
-            oneshot_allocator_t(std::move(oneshot_segments.release()));
-
-        auto segments_res = block_allocator_t::make(
-            final.m.segments_mem.shoot(), final.m.segments_mem,
-            sizeof(lib::SegmentShape));
+        auto segments_res = block_allocator_t::make(mem_segments.release(),
+                                                    sizeof(lib::SegmentShape));
         if (!segments_res.okay())
             return segments_res.err();
         new (&final.m.segments)
@@ -204,7 +174,7 @@ zl::opt<PolyShapeRef> PhysicsSystem::create_square(
 
 void PhysicsSystem::destroy_shape(ShapeRef ref) noexcept
 {
-    if (zl::memcontains(m.polys_mem.shoot(), zl::raw_slice(*(u8 *)ref, 0))) {
+    if (zl::memcontains(m.polys_mem, zl::raw_slice(*(u8 *)ref, 0))) {
         destroy_poly_shape(PolyShapeRef(ref));
     } else {
         destroy_segment_shape(SegmentShapeRef(ref));

@@ -1,6 +1,5 @@
 #include "level.h"
 #include <allo/heap_allocator.h>
-#include <allo/oneshot_allocator.h>
 #include <allo/stack_allocator.h>
 #include <ziglike/defer.h>
 #include <ziglike/opt.h>
@@ -49,7 +48,7 @@ allo::allocation_status_t init_level() noexcept
             return mem_res.err();
         zl::slice<u8> mem = mem_res.release();
 
-        auto stack_res = stack_allocator_t::make(mem, parent);
+        auto stack_res = stack_allocator_t::make_owned(mem, parent);
         if (!stack_res.okay()) {
             allo::free(parent, mem);
             return stack_res.err();
@@ -65,7 +64,7 @@ allo::allocation_status_t init_level() noexcept
             return mem_res.err();
         zl::slice<u8> mem = mem_res.release();
 
-        auto stack_res = stack_allocator_t::make(mem, parent);
+        auto stack_res = stack_allocator_t::make_owned(mem, parent);
         if (!stack_res.okay()) {
             allo::free(parent, mem);
             return stack_res.err();
