@@ -12,8 +12,8 @@
             .hash = "1220986223fb204be0679b50e43a9d2cbcaa7fca701b43ff800034e655e86d0f0f65",
         },
         .allo = .{
-            .url = "https://github.com/the-argus/allo/archive/3022408c9a73ac970b9c66af0a0ab41ef306a697.tar.gz",
-            .hash = "12201d516631dbb07e72e07a00a6654caf6a5eba6ae2eedc51cf6465de88cf365679",
+            .url = "https://github.com/the-argus/allo/archive/5f3fda358799b433853c0e91f5a066d9f7cb47c3.tar.gz",
+            .hash = "1220366f4e8f5db1ceace36ace27702eb675af59390760da9f02c045276d7905d20f",
         },
         .raylib = .{
             .url = "https://github.com/raysan5/raylib/archive/e7664d5684f4b7c487d2a08645f23a1d0485f9e7.tar.gz",
