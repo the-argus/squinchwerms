@@ -23,11 +23,11 @@ class PhysicsSystem
     void register_singleton() noexcept;
 
     static zl::res<PhysicsSystem &, allo::AllocationStatusCode>
-    make(allo::AllocatorDynRef parent) noexcept;
+    make_with(allo::abstract_allocator_t &parent) noexcept;
 
     // allocate a damped spring and connect two bodies with it.
     zl::opt<DampedSpringRef> connect_with_damped_spring(
-        allo::AllocatorDynRef allocator, BodyRef a, BodyRef b,
+        allo::abstract_allocator_t &allocator, BodyRef a, BodyRef b,
         const lib::Body::spring_options_t &options) noexcept;
 
     void update() noexcept;
@@ -63,7 +63,7 @@ class PhysicsSystem
         allo::block_allocator_t bodies;
         allo::block_allocator_t polys;
         allo::block_allocator_t segments;
-		zl::slice<uint8_t> polys_mem;
+        zl::slice<uint8_t> polys_mem;
         lib::Space space;
     } m;
 };

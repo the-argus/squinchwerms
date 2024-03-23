@@ -34,7 +34,7 @@ BodyRef PhysicsSystem::static_body() noexcept
 }
 
 zl::res<PhysicsSystem &, allo::AllocationStatusCode>
-PhysicsSystem::make(allo::AllocatorDynRef parent) noexcept
+PhysicsSystem::make_with(allo::abstract_allocator_t &parent) noexcept
 {
     using namespace allo;
     auto final_res = alloc_one<PhysicsSystem>(parent);
@@ -107,7 +107,7 @@ PhysicsSystem::make(allo::AllocatorDynRef parent) noexcept
 }
 
 zl::opt<DampedSpringRef> PhysicsSystem::connect_with_damped_spring(
-    allo::AllocatorDynRef allocator, BodyRef a, BodyRef b,
+    allo::abstract_allocator_t &allocator, BodyRef a, BodyRef b,
     const lib::Body::spring_options_t &options) noexcept
 {
     auto res = allo::alloc_one<cpDampedSpring>(allocator);

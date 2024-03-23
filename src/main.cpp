@@ -32,10 +32,10 @@ int main()
         std::abort();
     }
 
-    auto physics_res = werm::PhysicsSystem::make(werm::level_allocator());
+    auto physics_res = werm::PhysicsSystem::make_with(werm::level_allocator());
     if (!physics_res.okay()) {
         LN_FATAL("Unable to initialize physics");
-		// no need to clear level allocator, this is an unrecoverable error
+        // no need to clear level allocator, this is an unrecoverable error
         std::abort();
     }
     werm::PhysicsSystem &physics = physics_res.release();

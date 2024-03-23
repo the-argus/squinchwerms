@@ -11,10 +11,23 @@ static zl::opt<allo::stack_allocator_t> lvlstack;
 static zl::opt<allo::stack_allocator_t> framestack;
 
 namespace werm {
-allo::HeapAllocatorDynRef level_heap() noexcept { return lvlheap.value(); }
-allo::AllocatorDynRef level_allocator() noexcept { return lvlstack.value(); }
-allo::AllocatorDynRef frame_allocator() noexcept { return framestack.value(); }
+allo::abstract_heap_allocator_t &level_heap() noexcept
+{
+    return lvlheap.value();
+}
+
+allo::abstract_allocator_t &level_allocator() noexcept
+{
+    return lvlstack.value();
+}
+
+allo::abstract_allocator_t &frame_allocator() noexcept
+{
+    return framestack.value();
+}
+
 void clear_frame() noexcept { framestack.reset(); }
+
 void clear_level() noexcept
 {
     lvlheap.reset();
