@@ -1,5 +1,6 @@
 #pragma once
 #include "../structures/pointer_collection.h"
+#include "../bytes.h"
 #include "stdbool.h"
 
 typedef struct
@@ -13,7 +14,7 @@ bool stack_allocator_init(stack_allocator_t *out);
 
 void stack_allocator_deinit(stack_allocator_t *out);
 
-void *stack_allocator_alloc(stack_allocator_t *ally, u64 bytes, u8 align);
+bytes_t stack_allocator_alloc(stack_allocator_t *ally, u64 bytes, u8 align);
 
 // TODO:
 // BUG:

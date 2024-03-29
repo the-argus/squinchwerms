@@ -22,7 +22,7 @@ bool stack_allocator_init(stack_allocator_t *out)
     return true;
 }
 
-void *stack_allocator_alloc(stack_allocator_t *ally, u64 bytes, u8 align)
+bytes_t stack_allocator_alloc(stack_allocator_t *ally, u64 bytes, u8 align)
 {
     assert(bytes < STACK_BUFFER_SIZE);
     u8 *res = mem_align(ally->top_buffer + ally->top_index, align);
@@ -49,14 +49,14 @@ void *stack_allocator_alloc(stack_allocator_t *ally, u64 bytes, u8 align)
         u64 newtop = ally->top_index + amount_alignment_moved + bytes;
         assert(newtop < STACK_BUFFER_SIZE);
         ally->top_index = newtop;
-        return ally->top_buffer;
+        return (bytes_t){.data = ally->top_buffer, .size = bytes};
     }
 
     // in this case, we can fit the object inside the buffer
     void *final_result =
         ally->top_buffer + ally->top_index + amount_alignment_moved;
     ally->top_index += amount_alignment_moved + bytes;
-    return final_result;
+    return (bytes_t){.data = final_result, .size = bytes};
 }
 
 void stack_allocator_deinit(stack_allocator_t *out)

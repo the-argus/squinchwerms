@@ -16,6 +16,8 @@ const c_sources = &[_][]const u8{
     "src/level.c",
     "src/physics.c",
     "src/allocators/global.c",
+    "src/allocators/static_block.c",
+    "src/allocators/stack.c",
     "src/structures/pointer_collection.c",
 };
 

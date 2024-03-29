@@ -1,12 +1,18 @@
-#include "intshorthand.h"
 #include "level.h"
 #include <raylib.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-const Vector2 render_size = {800, 600};
-const size_t fps = 60;
+typedef struct
+{
+    int x;
+    int y;
+} Vector2I;
+
+const Vector2I render_size = {800, 600};
+const Vector2 half_render_size = {400, 300};
+const int fps = 60;
 
 static Camera2D camera;
 
@@ -16,7 +22,7 @@ int main()
     SetTargetFPS(fps);
 
     camera = (Camera2D){
-        .offset = (Vector2){render_size.x / 2, render_size.y / 2},
+        .offset = (Vector2){half_render_size.x, half_render_size.y},
         .target = {0, 0},
         .zoom = 1,
     };
@@ -54,8 +60,8 @@ int main()
     // physics.create_square(physics.static_body(),
     //                       {.bounding = floor, .radius = 1});
 
-    Texture end_tex = LoadTexture("assets/img/werm/end.png");
-    Texture begin_tex = LoadTexture("assets/img/werm/head.png");
+    // Texture end_tex = LoadTexture("assets/img/werm/end.png");
+    // Texture begin_tex = LoadTexture("assets/img/werm/head.png");
 
     while (!WindowShouldClose()) {
         // clear any frame-specific allocations
