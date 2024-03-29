@@ -17,7 +17,9 @@ void pointer_collection_set(pointer_collection_t *list, u64 index, void *value)
 
 void pointer_collection_append(pointer_collection_t *list, void *value)
 {
-    if (list->capacity <= list->size + 1) {
+    assert(list);
+    assert(list->data);
+    if (list->capacity <= list->size) {
         const u64 newcap =
             (u64)ceilf((float)list->size * POINTER_COLLECTION_REALLOC_RATIO);
         void **newmem = (void **)global_allocator_realloc(value, newcap);
