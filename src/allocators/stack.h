@@ -25,6 +25,6 @@ bytes_t stack_allocator_alloc(stack_allocator_t *ally, u64 bytes, u8 align);
 void stack_allocator_clear(stack_allocator_t *ally);
 
 #define STACK_ALLOC_ONE(allocator, type) \
-    stack_allocator_alloc(allocator, sizeof(type), alignof(type))
+    (type *)stack_allocator_alloc(allocator, sizeof(type), alignof(type)).data
 #define STACK_ALLOC(allocator, type, amount) \
     stack_allocator_alloc(allocator, (amount) * sizeof(type), alignof(type))

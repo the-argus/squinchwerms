@@ -36,9 +36,8 @@ int main()
     }
 
     {
-        physics_system_t *p = (physics_system_t *)STACK_ALLOC_ONE(
-                                  level_allocator(), physics_system_t)
-                                  .data;
+        physics_system_t *p =
+            STACK_ALLOC_ONE(level_allocator(), physics_system_t);
         if (!physics_system_init(level_allocator(), p)) {
             printf("FATAL: unable to initialize physics system\n");
             abort();

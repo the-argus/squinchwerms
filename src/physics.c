@@ -18,7 +18,7 @@ void physics_system_free_chipmunk_extra_resources(physics_system_t *system)
 
 bool physics_system_init(stack_allocator_t *allocator, physics_system_t *out)
 {
-    out->space = (cpSpace *)STACK_ALLOC_ONE(allocator, cpSpace).data;
+    out->space = STACK_ALLOC_ONE(allocator, cpSpace);
     cpSpaceInit(out->space);
     // only (potential) failure point for this function
     // TODO: check if cpSpaceInit can even fail
