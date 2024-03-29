@@ -1,93 +1,32 @@
 #include "level.h"
-#include <allo/heap_allocator.h>
-#include <allo/stack_allocator.h>
-#include <ziglike/defer.h>
-#include <ziglike/opt.h>
-#include <ziglike/zigstdint.h>
 
-static allo::c_allocator_t parent;
-static zl::opt<allo::heap_allocator_t> lvlheap;
-static zl::opt<allo::stack_allocator_t> lvlstack;
-static zl::opt<allo::stack_allocator_t> framestack;
+static stack_allocator_t level_ally;
+static stack_allocator_t frame_ally;
 
-namespace werm {
-allo::abstract_heap_allocator_t &level_heap() noexcept
+stack_allocator_t *level_allocator()
 {
-    return lvlheap.value();
+    assert(level_ally.top_buffer);
+    return &level_ally;
 }
 
-allo::abstract_allocator_t &level_allocator() noexcept
+stack_allocator_t *frame_allocator()
 {
-    return lvlstack.value();
+    assert(frame_ally.top_buffer);
+    return &frame_ally;
 }
 
-allo::abstract_allocator_t &frame_allocator() noexcept
+void clear_level() { stack_allocator_clear(&level_ally); }
+
+void clear_frame() { stack_allocator_clear(&frame_ally); }
+
+bool init_level()
 {
-    return framestack.value();
-}
-
-void clear_frame() noexcept { framestack.reset(); }
-
-void clear_level() noexcept
-{
-    lvlheap.reset();
-    lvlstack.reset();
-    if (framestack.has_value())
-        framestack.reset();
-}
-
-allo::allocation_status_t init_level() noexcept
-{
-    using namespace allo;
-    {
-        auto mem_res = allo::alloc<u8>(parent, 200UL * 4096);
-        if (!mem_res.okay())
-            return mem_res.err();
-        zl::slice<u8> mem = mem_res.release();
-
-        auto heap_res = heap_allocator_t::make_owned(mem, parent);
-        if (!heap_res.okay()) {
-            allo::free(parent, mem);
-            return heap_res.err();
-        }
-        lvlheap.emplace(std::move(heap_res.release()));
+    if (!stack_allocator_init(&level_ally)) {
+        return false;
     }
-
-    zl::defer remove_heap([]() { lvlheap.reset(); });
-
-    {
-        auto mem_res = allo::alloc<u8>(parent, 200UL * 4096);
-        if (!mem_res.okay())
-            return mem_res.err();
-        zl::slice<u8> mem = mem_res.release();
-
-        auto stack_res = stack_allocator_t::make_owned(mem, parent);
-        if (!stack_res.okay()) {
-            allo::free(parent, mem);
-            return stack_res.err();
-        }
-        lvlstack.emplace(std::move(stack_res.release()));
+    if (!stack_allocator_init(&frame_ally)) {
+        stack_allocator_deinit(&level_ally);
+        return false;
     }
-
-    zl::defer remove_stack([]() { lvlstack.reset(); });
-
-    {
-        auto mem_res = allo::alloc<u8>(parent, 200UL * 4096);
-        if (!mem_res.okay())
-            return mem_res.err();
-        zl::slice<u8> mem = mem_res.release();
-
-        auto stack_res = stack_allocator_t::make_owned(mem, parent);
-        if (!stack_res.okay()) {
-            allo::free(parent, mem);
-            return stack_res.err();
-        }
-        framestack.emplace(std::move(stack_res.release()));
-    }
-
-    remove_heap.cancel();
-    remove_stack.cancel();
-
-    return AllocationStatusCode::Okay;
+    return true;
 }
-} // namespace werm

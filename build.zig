@@ -7,12 +7,16 @@ const universal_flags = &[_][]const u8{
     "-DCP_USE_DOUBLES=0",
     "-std=c11",
     "-Isrc/",
+    "-Werror",
+    "-Wall",
 };
 
 const c_sources = &[_][]const u8{
     "src/main.c",
     "src/level.c",
     "src/physics.c",
+    "src/allocators/global.c",
+    "src/structures/pointer_collection.c",
 };
 
 pub fn build(b: *std.Build) !void {
