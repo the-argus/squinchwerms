@@ -4,25 +4,15 @@ const zcc = @import("compile_commands");
 const app_name = "squinchwerms";
 
 const universal_flags = &[_][]const u8{
-    "-DFMT_EXCEPTIONS=0",
-    "-fno-exceptions",
-    "-fno-rtti",
     "-DCP_USE_DOUBLES=0",
-    "-std=c++20",
+    "-std=c11",
     "-Isrc/",
-    "-DFMT_HEADER_ONLY",
-    "-DZIGLIKE_OPTIONAL_ALLOW_POINTERS",
 };
 
-const cpp_sources = &[_][]const u8{
-    "src/main.cpp",
-    "src/allo_impl.cpp",
-    "src/level.cpp",
-    "src/physics.cpp",
-    "src/space.cpp",
-    "src/shape.cpp",
-    "src/body.cpp",
-    "src/natural_log/natural_log.cpp",
+const c_sources = &[_][]const u8{
+    "src/main.c",
+    "src/level.c",
+    "src/physics.c",
 };
 
 pub fn build(b: *std.Build) !void {
@@ -36,25 +26,6 @@ pub fn build(b: *std.Build) !void {
     var flags = std.ArrayList([]const u8).init(b.allocator);
     defer flags.deinit();
     try flags.appendSlice(universal_flags);
-
-    // import libraries
-    const ziglike = block: {
-        const dep = b.dependency("ziglike", .{ .target = target, .optimize = optimize });
-        const ziglike_include_path = b.pathJoin(&.{ dep.builder.install_path, "include" });
-        try flags.append(b.fmt("-I{s}", .{ziglike_include_path}));
-        break :block dep;
-    };
-
-    const allo = block: {
-        const dep = b.dependency("allo", .{ .target = target, .optimize = optimize });
-        const allo_include_path = b.pathJoin(&.{ dep.builder.install_path, "include" });
-        try flags.append(b.fmt("-I{s}", .{allo_include_path}));
-        break :block dep;
-    };
-
-    // import fmt
-    const fmt = b.dependency("fmt", .{});
-    const fmt_include_path = b.pathJoin(&.{ fmt.builder.install_path, "include" });
 
     const raylib = b.dependency("raylib", .{ .target = target, .optimize = optimize }).artifact("raylib");
     const chipmunk = b.dependency("chipmunk2d", .{ .target = target, .optimize = optimize }).artifact("chipmunk");
@@ -77,20 +48,12 @@ pub fn build(b: *std.Build) !void {
     });
     try lsp_targets.append(exe);
 
-    exe.addCSourceFiles(cpp_sources, final_flags);
+    exe.addCSourceFiles(c_sources, final_flags);
 
     // link libraries
-    exe.step.dependOn(ziglike.builder.getInstallStep());
-    exe.step.dependOn(allo.builder.getInstallStep());
-    exe.linkLibCpp();
+    exe.linkLibC();
     exe.linkLibrary(raylib);
     exe.linkLibrary(chipmunk);
-
-    exe.step.dependOn(fmt.builder.getInstallStep());
-    exe.addIncludePath(.{
-        .path = fmt_include_path,
-    });
-
     b.installArtifact(exe);
 
     const runstep = b.step("run", "Run the game");
