@@ -3,7 +3,7 @@
 #include <chipmunk/cpBB.h>
 #include <raylib.h>
 
-inline Rectangle cpbb_to_raylib(cpBB b)
+static inline Rectangle cpbb_to_raylib(cpBB b)
 {
     assert(b.r > b.l);
     assert(b.t < b.b);
