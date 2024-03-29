@@ -1,4 +1,6 @@
 #include "level.h"
+#include "physics.h"
+#include "rect.h"
 #include <raylib.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -33,42 +35,51 @@ int main()
         abort();
     }
 
-    // werm::PhysicsSystem &physics = physics_res.release();
+    {
+        physics_system_t *p = (physics_system_t *)STACK_ALLOC_ONE(
+                                  level_allocator(), physics_system_t)
+                                  .data;
+        if (!physics_system_init(level_allocator(), p)) {
+            printf("FATAL: unable to initialize physics system\n");
+            abort();
+        }
+        physics_system_register_singleton(p);
+    }
 
-    // werm::BodyRef begin = physics
-    //                           .create_body({.type = lib::Body::Type::DYNAMIC,
-    //                                         .mass = 10,
-    //                                         .moment = INFINITY})
-    //                           .value();
-    // begin->set_position({0, 100});
-    // werm::BodyRef end = physics
-    //                         .create_body({.type = lib::Body::Type::DYNAMIC,
-    //                                       .mass = 10,
-    //                                       .moment = INFINITY})
-    //                         .value();
-    // end->set_position({100, 100});
+    cpBB floor = (cpBB){
+        .b = 0,
+        .l = -half_render_size.x,
+        .r = half_render_size.x,
+        .t = 20,
+    };
+    physics_system_create_square(
+        physics_system_instance(),
+        &(physics_square_shape_options_t){
+            .body = physics_system_static_body(physics_system_instance()),
+            .bounding = floor,
+            .radius = 1.0f,
+        });
 
-    // // spring exists for the whole level so just put it on the level stack
-    // werm::DampedSpringRef spring =
-    //     physics
-    //         .connect_with_damped_spring(
-    //             werm::level_allocator(), begin, end,
-    //             {.length = 10, .stiffness = 1, .damping = 1})
-    //         .value();
-
-    // lib::Rect floor = {{0, 0}, {800, 10}};
-    // physics.create_square(physics.static_body(),
-    //                       {.bounding = floor, .radius = 1});
+    const float player_mass = 10;
+    cpBody *player_body =
+        physics_system_create_body(physics_system_instance(), player_mass);
+    physics_system_create_square(
+        physics_system_instance(),
+        &(physics_square_shape_options_t){
+            .body = player_body,
+            .bounding = (cpBB){.b = 5, .t = -5, .l = -5, .r = 5},
+            .radius = 1.0f,
+        });
 
     // Texture end_tex = LoadTexture("assets/img/werm/end.png");
-    // Texture begin_tex = LoadTexture("assets/img/werm/head.png");
+    Texture begin_tex = LoadTexture("assets/img/werm/head.png");
 
     while (!WindowShouldClose()) {
         // clear any frame-specific allocations
         clear_frame();
         // update
         {
-            // physics.update();
+            physics_system_update(physics_system_instance());
         }
 
         // draw
@@ -76,14 +87,22 @@ int main()
         ClearBackground(WHITE);
         BeginMode2D(camera);
         // DrawTextureV(end_tex, end->position(), WHITE);
-        //  DrawTextureV(begin_tex, begin->position(), WHITE);
-        // DrawRectangleRec(floor, WHITE);
+        // cpVect pos = cpBodyGetPosition(begin);
+        cpVect player_pos = cpBodyGetPosition(player_body);
+        DrawTextureV(begin_tex, *(Vector2 *)&player_pos, WHITE);
+        DrawRectangleRec(cpbb_to_raylib(floor), WHITE);
         EndMode2D();
         EndDrawing();
     }
 
     CloseWindow();
 
+    // NOTE: chipmunk doesnt use our allocators, so we have to clean up its shit
+    // before we clear the allocator which holds out handle into those resources
+    physics_system_free_chipmunk_extra_resources(physics_system_instance());
+#ifndef NDEBUG
+    physics_system_unregister_singleton();
+#endif
     clear_level();
     // WARN: all items allocated in level allocator are now invalid
     return 0;

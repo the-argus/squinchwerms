@@ -1,4 +1,5 @@
 #include "pointer_collection.h"
+#include "allocators/global.h"
 #include <stdio.h>
 #include <stdlib.h>
 

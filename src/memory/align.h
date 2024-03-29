@@ -1,6 +1,6 @@
 #pragma once
-#include "../intshorthand.h"
 #include "assert.h"
+#include "intshorthand.h"
 
 inline u8 *mem_align_exponent(u8 *input, u8 align_exponent) // NOLINT
 {

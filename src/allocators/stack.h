@@ -1,7 +1,8 @@
 #pragma once
-#include "../structures/pointer_collection.h"
-#include "../bytes.h"
-#include "stdbool.h"
+#include "bytes.h"
+#include "structures/pointer_collection.h"
+#include <stdalign.h>
+#include <stdbool.h>
 
 typedef struct
 {

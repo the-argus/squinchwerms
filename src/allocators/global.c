@@ -1,4 +1,4 @@
-#include "./global.h"
+#include "allocators/global.h"
 #include <stdlib.h>
 
 u8 *global_allocator_alloc(u64 bytes) { return malloc(bytes); }

@@ -1,6 +1,6 @@
 #include "stack.h"
-#include "../allocators/global.h"
-#include "../memory/align.h"
+#include "allocators/global.h"
+#include "memory/align.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

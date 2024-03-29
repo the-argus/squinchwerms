@@ -1,5 +1,5 @@
 #pragma once
-#include "../intshorthand.h"
+#include "intshorthand.h"
 
 u8 *global_allocator_alloc(u64 bytes);
 

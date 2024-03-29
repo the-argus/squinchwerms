@@ -1,4 +1,4 @@
-#include "../allocators/static_block.h"
+#include "allocators/static_block.h"
 #include <assert.h>
 #include <stdalign.h>
 #include <stddef.h>

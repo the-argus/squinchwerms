@@ -1,6 +1,5 @@
 #pragma once
-#include "../allocators/global.h"
-#include "../intshorthand.h"
+#include "intshorthand.h"
 #include "assert.h"
 #include <math.h>
 

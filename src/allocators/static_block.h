@@ -1,5 +1,5 @@
 #pragma once
-#include "../bytes.h"
+#include "bytes.h"
 #include "intshorthand.h"
 
 typedef struct
