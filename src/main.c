@@ -32,37 +32,51 @@ int main()
         std::abort();
     }
 
-    if (!werm::init_physics(werm::level_allocator()).okay()) {
+    auto physics_res = werm::PhysicsSystem::make_with(werm::level_allocator());
+    if (!physics_res.okay()) {
         LN_FATAL("Unable to initialize physics");
+        // no need to clear level allocator, this is an unrecoverable error
         std::abort();
     }
+    werm::PhysicsSystem &physics = physics_res.release();
 
-    werm::BodyRef begin =
-        werm::create_body(
-            {.type = lib::Body::Type::DYNAMIC, .mass = 10, .moment = INFINITY})
-            .value();
+    werm::BodyRef begin = physics
+                              .create_body({.type = lib::Body::Type::DYNAMIC,
+                                            .mass = 10,
+                                            .moment = INFINITY})
+                              .value();
     begin->set_position({0, 100});
-    werm::BodyRef end =
-        werm::create_body(
-            {.type = lib::Body::Type::DYNAMIC, .mass = 10, .moment = INFINITY})
-            .value();
+    werm::BodyRef end = physics
+                            .create_body({.type = lib::Body::Type::DYNAMIC,
+                                          .mass = 10,
+                                          .moment = INFINITY})
+                            .value();
     end->set_position({100, 100});
 
     // spring exists for the whole level so just put it on the level stack
     werm::DampedSpringRef spring =
-        werm::connect_with_damped_spring(
-            werm::level_allocator(), begin, end,
-            {.length = 10, .stiffness = 1, .damping = 1})
+        physics
+            .connect_with_damped_spring(
+                werm::level_allocator(), begin, end,
+                {.length = 10, .stiffness = 1, .damping = 1})
             .value();
 
     lib::Rect floor = {{0, 0}, {800, 10}};
-    werm::create_square(werm::static_body(), {.bounding = floor, .radius = 1});
+    physics.create_square(physics.static_body(),
+                          {.bounding = floor, .radius = 1});
 
     Texture end_tex = LoadTexture("assets/img/werm/end.png");
     Texture begin_tex = LoadTexture("assets/img/werm/head.png");
 
     while (!WindowShouldClose()) {
-        werm::update_physics();
+        // clear any frame-specific allocations
+        werm::clear_frame();
+        // update
+        {
+            physics.update();
+        }
+
+        // draw
         BeginDrawing();
         ClearBackground(WHITE);
         BeginMode2D(camera);
