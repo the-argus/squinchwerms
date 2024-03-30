@@ -19,6 +19,7 @@ void physics_system_free_chipmunk_extra_resources(physics_system_t *system)
 bool physics_system_init(stack_allocator_t *allocator, physics_system_t *out)
 {
     out->space = STACK_ALLOC_ONE(allocator, cpSpace);
+    memset(out->space, 0, sizeof(cpSpace)); // chipmunk expects memory zeroed
     cpSpaceInit(out->space);
     // only (potential) failure point for this function
     // TODO: check if cpSpaceInit can even fail
@@ -33,6 +34,9 @@ bool physics_system_init(stack_allocator_t *allocator, physics_system_t *out)
         STACK_ALLOC(allocator, cpPolyShape, PHYSICS_SYSTEM_MAX_SHAPES);
     bytes_t segments_mem =
         STACK_ALLOC(allocator, cpSegmentShape, PHYSICS_SYSTEM_MAX_SHAPES);
+    memset(bodies_mem.data, 0, bodies_mem.size);
+    memset(polys_mem.data, 0, polys_mem.size);
+    memset(segments_mem.data, 0, segments_mem.size);
 
     // these initializers cannot fail
     static_block_allocator_init(
