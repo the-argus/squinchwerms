@@ -2,13 +2,16 @@
 
 u8 *mem_align_exponent(u8 *input, u8 align_exponent) // NOLINT
 {
+    u8 current = get_alignment_exponent_from_alignment((u64)input);
+    if (current >= align_exponent)
+        return input;
     assert(align_exponent < 10);
     u64 res = (((u64)input >> align_exponent) + 1) << align_exponent;
     assert(res >= (u64)input);
 #ifndef NDEBUG
     u64 diff = res - (u64)input;
     u64 maskplusone = (1UL << align_exponent);
-    assert(diff < maskplusone);
+    assert(diff <= maskplusone);
 #endif
     return (u8 *)res; // NOLINT
 }
