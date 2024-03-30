@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.11) # FetchContent is available in 3.11+
 project(squinchwerms)
 
+set(CMAKE_VERBOSE_MAKEFILE on)
+
 set(c_sources
     src/level.c
     src/main.c
@@ -60,8 +62,9 @@ endif()
 add_executable(${PROJECT_NAME} ${c_sources})
 #set(raylib_VERBOSE 1)
 target_link_libraries(${PROJECT_NAME} raylib)
-target_link_libraries(${PROJECT_NAME} chipmunk)
-target_include_directories(${PROJECT_NAME} ${werms_include_dirs})
+target_link_libraries(${PROJECT_NAME} chipmunk_static)
+target_include_directories(${PROJECT_NAME} PRIVATE ${werms_include_dirs}) # this is a game with no deps, PRIVATE doesnt matter really
+target_include_directories(${PROJECT_NAME} PRIVATE ${chipmunk_SOURCE_DIR}/include)
 
 # Web Configurations
 if (${PLATFORM} STREQUAL "Web")
