@@ -46,10 +46,10 @@ int main()
     }
 
     cpBB floor = (cpBB){
-        .b = 0,
+        .b = 20,
         .l = -half_render_size.x,
         .r = half_render_size.x,
-        .t = 20,
+        .t = 0,
     };
     physics_system_create_square(
         physics_system_instance(),

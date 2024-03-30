@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define STACK_BUFFER_SIZE 4096
+#define STACK_BUFFER_SIZE 200000
 
 bool stack_allocator_init(stack_allocator_t *out)
 {
@@ -24,6 +24,7 @@ bool stack_allocator_init(stack_allocator_t *out)
 
 bytes_t stack_allocator_alloc(stack_allocator_t *ally, u64 bytes, u8 align)
 {
+    printf("trying to alloc %zu bytes\n", bytes);
     assert(bytes < STACK_BUFFER_SIZE);
     u8 *res = mem_align(ally->top_buffer + ally->top_index, align);
     // you cant 64 byte align a single byte. could be done but its rare and
