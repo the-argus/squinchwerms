@@ -1,8 +1,6 @@
 cmake_minimum_required(VERSION 3.11) # FetchContent is available in 3.11+
 project(squinchwerms)
 
-set(CMAKE_VERBOSE_MAKEFILE on)
-
 set(c_sources
     src/level.c
     src/main.c
