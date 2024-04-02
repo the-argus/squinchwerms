@@ -3,6 +3,7 @@
 #include "shape.h"
 #include "vect.h"
 #include <chipmunk/chipmunk_structs.h>
+#include <cstring>
 
 namespace lib {
 class Space : public ::cpSpace
@@ -10,6 +11,7 @@ class Space : public ::cpSpace
   public:
     inline Space() noexcept : ::cpSpace({})
     {
+        std::memset(static_cast<cpSpace *>(this), 0, sizeof(cpSpace));
         void *res = cpSpaceInit(this);
         assert(res);
     }

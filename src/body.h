@@ -2,6 +2,7 @@
 #include "chipmunk/chipmunk_structs.h"
 #include "shape.h"
 #include "vect.h"
+#include <cstring>
 
 namespace lib {
 class Body : public ::cpBody
@@ -23,10 +24,8 @@ class Body : public ::cpBody
     };
 
     inline Body(const body_options_t &options)
-#ifndef NDEBUG
-        : ::cpBody({})
-#endif
     {
+        std::memset(static_cast<cpBody *>(this), 0, sizeof(cpBody));
         /// Initialize fields used by chipmunk to determine what type something
         /// is we have to do this here instead of in cpBodySetType because
         /// cpBodySetType reads from the values before writing to them, spamming

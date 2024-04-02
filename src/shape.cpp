@@ -1,5 +1,6 @@
 #include "shape.h"
 #include "body.h"
+#include <cstring>
 
 namespace lib {
 void Shape::_add_to_space(Space *_space)
@@ -79,6 +80,7 @@ Vect PolyShape::vertex(int index) const
 
 PolyShape::PolyShape(lib::Body &body, const default_options_t &options)
 {
+    std::memset(static_cast<cpPolyShape *>(this), 0, sizeof(cpPolyShape));
     static_assert(
         sizeof(cpVect) == sizeof(lib::Vect),
         "Make sure lib::Vect and cpVect are laid out identically in memory");
@@ -89,6 +91,7 @@ PolyShape::PolyShape(lib::Body &body, const default_options_t &options)
 
 PolyShape::PolyShape(lib::Body &body, const square_options_t &options)
 {
+    std::memset(static_cast<cpPolyShape *>(this), 0, sizeof(cpPolyShape));
     cpBoxShapeInit2(this, &body, options.bounding, options.radius);
 }
 
@@ -103,6 +106,7 @@ void SegmentShape::set_neighbors(Vect prev, Vect next)
 
 SegmentShape::SegmentShape(lib::Body &body, const options_t &options) noexcept
 {
+    std::memset(static_cast<cpSegmentShape *>(this), 0, sizeof(cpSegmentShape));
     // TODO: figure out why reinterpret_cast is necessary here, Body
     // publicly inherits from cpBody?
     cpSegmentShapeInit(this, reinterpret_cast<cpBody *>(&body), options.a,

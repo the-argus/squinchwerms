@@ -31,6 +31,7 @@
               pkg-config
               libGL
               cmake
+              zig_0_11
             ])
             ++ (with pkgs.xorg; [
               libX11
