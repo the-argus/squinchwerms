@@ -30,7 +30,7 @@
               valgrind
               pkg-config
               libGL
-              zig_0_11
+              cmake
             ])
             ++ (with pkgs.xorg; [
               libX11

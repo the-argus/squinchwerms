@@ -26,7 +26,7 @@ struct Vect : public ::Vector2
     static inline constexpr Vect zero() noexcept { return Vect(0, 0); }
     static inline constexpr Vect forangle(float angle) noexcept
     {
-        return cpvforangle(angle);
+        return Vect(cosf(angle), sinf(angle));
     }
 
     // math functions (do not modify the Vector)
@@ -51,11 +51,11 @@ struct Vect : public ::Vector2
 
     inline constexpr bool operator==(const Vect &other) const noexcept
     {
-        return cpveql(*this, other);
+        return this->x == other.x && this->y == other.y;
     }
     inline constexpr Vect operator-(const Vect &other) const noexcept
     {
-        return cpvsub(*this, other);
+        return cpVect(x - other.x, y - other.y);
     }
     inline constexpr Vect operator+(const Vect &other) const noexcept
     {
@@ -63,7 +63,7 @@ struct Vect : public ::Vector2
     }
     inline constexpr Vect operator*(float scale) const noexcept
     {
-        return cpvmult(*this, scale);
+        return Vect(x * scale, y * scale);
     }
     inline constexpr Vect operator/(float scale) const noexcept
     {
