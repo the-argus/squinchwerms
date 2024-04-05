@@ -10,6 +10,7 @@ set(c_sources
     src/shape.cpp
     src/level.cpp
     src/body.cpp
+	src/terrain.cpp
     src/natural_log/natural_log.cpp
 )
 

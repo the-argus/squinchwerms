@@ -1,6 +1,7 @@
 #include "level.h"
 #include "natural_log/natural_log.h"
 #include "physics.h"
+#include "terrain.h"
 #include "vect.h"
 #include <allo.h>
 #include <cstddef>
@@ -39,6 +40,15 @@ int main()
         std::abort();
     }
     werm::PhysicsSystem &physics = physics_res.release();
+
+    auto terrain_res = werm::Terrain::make_with(werm::level_allocator(),
+                                                {.x = 100, .y = 100}, 2);
+    if (!terrain_res) {
+        LN_FATAL("Unable to initialize terrain");
+        std::abort();
+    }
+
+    werm::Terrain &terrain = terrain_res.value();
 
     werm::BodyRef begin = physics
                               .create_body({.type = lib::Body::Type::DYNAMIC,
@@ -82,7 +92,8 @@ int main()
         BeginMode2D(camera);
         DrawTextureV(end_tex, end->position(), WHITE);
         DrawTextureV(begin_tex, begin->position(), WHITE);
-        DrawRectangleRec(floor, WHITE);
+        DrawRectangleRec(floor, BLACK);
+        //terrain.draw();
         EndMode2D();
         EndDrawing();
     }
