@@ -1,3 +1,5 @@
+#include <raylib.h>
+
 #include "level.h"
 #include "natural_log/natural_log.h"
 #include "physics.h"

@@ -1,9 +1,11 @@
 #include "terrain.h"
+#include <okay/macros/foreach.h>
+#include <okay/opt.h>
 #include <raymath.h>
 
 namespace werm {
-zl::opt<Terrain &> Terrain::make_with(allo::abstract_allocator_t &ally,
-                                      Coord size, u64 fill_amount) noexcept
+ok::opt_t<Terrain &> Terrain::make_with(ok::allocator_t &ally, Coord size,
+                                        u64 fill_amount) noexcept
 {
     auto maybe_mem = allo::alloc_one<Terrain>(ally);
     if (!maybe_mem.okay())
@@ -82,7 +84,8 @@ void Terrain::set(const Coord &coord, TerrainEntry value) noexcept
 void Terrain::draw() const noexcept
 {
     Matrix transform = MatrixIdentity();
-    for (const auto &chunk : m.chunks) {
+    ok_foreach(const auto &chunk, m.chunks)
+    {
         DrawMesh(chunk.mesh, m.chunk_mat, transform);
     }
 }
