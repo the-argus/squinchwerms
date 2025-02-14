@@ -11,7 +11,6 @@ const universal_flags = &[_][]const u8{
     "-std=c++20",
     "-Isrc/",
     "-DFMT_HEADER_ONLY",
-    "-DZIGLIKE_OPTIONAL_ALLOW_POINTERS",
 };
 
 const cpp_sources = &[_][]const u8{
@@ -38,35 +37,9 @@ pub fn build(b: *std.Build) !void {
     try flags.appendSlice(universal_flags);
 
     // import libraries
-    const ziglike = block: {
-        const dep = b.dependency("ziglike", .{ .target = target, .optimize = optimize });
-        const ziglike_include_path = b.pathJoin(&.{ dep.builder.install_path, "include" });
-        try flags.append(b.fmt("-I{s}", .{ziglike_include_path}));
-        break :block dep;
-    };
-
-    const allo = block: {
-        const dep = b.dependency("allo", .{ .target = target, .optimize = optimize });
-        const allo_include_path = b.pathJoin(&.{ dep.builder.install_path, "include" });
-        try flags.append(b.fmt("-I{s}", .{allo_include_path}));
-        break :block dep;
-    };
-
-    // import fmt
-    const fmt = b.dependency("fmt", .{});
-    const fmt_include_path = b.pathJoin(&.{ fmt.builder.install_path, "include" });
-
-    const raylib = b.dependency("raylib", .{ .target = target, .optimize = optimize }).artifact("raylib");
+    const okaylib = b.dependency("okaylib", .{ .target = target, .optimize = optimize });
+    const raylib = b.dependency("raylib", .{ .target = target, .optimize = optimize, .linux_display_backend = .X11 }).artifact("raylib");
     const chipmunk = b.dependency("chipmunk2d", .{ .target = target, .optimize = optimize }).artifact("chipmunk");
-
-    // HACK: chipmunk include dirs dont appear in compile_commands.json unless I do this :/
-    {
-        for (chipmunk.installed_headers.items) |include_dir_step| {
-            const path = b.pathJoin(&.{ include_dir_step.owner.install_prefix, "include" });
-            defer b.allocator.free(path);
-            try flags.append(b.fmt("-I{s}", .{path}));
-        }
-    }
 
     const final_flags = try flags.toOwnedSlice();
 
@@ -77,19 +50,17 @@ pub fn build(b: *std.Build) !void {
     });
     try lsp_targets.append(exe);
 
-    exe.addCSourceFiles(cpp_sources, final_flags);
+    exe.addCSourceFiles(.{
+        .files = cpp_sources,
+        .flags = final_flags,
+    });
 
     // link libraries
-    exe.step.dependOn(ziglike.builder.getInstallStep());
-    exe.step.dependOn(allo.builder.getInstallStep());
+    exe.step.dependOn(okaylib.builder.getInstallStep());
+    exe.addIncludePath(okaylib.builder.path("include/"));
     exe.linkLibCpp();
     exe.linkLibrary(raylib);
     exe.linkLibrary(chipmunk);
-
-    exe.step.dependOn(fmt.builder.getInstallStep());
-    exe.addIncludePath(.{
-        .path = fmt_include_path,
-    });
 
     b.installArtifact(exe);
 
