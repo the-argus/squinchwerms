@@ -14,13 +14,14 @@ const universal_flags = &[_][]const u8{
 };
 
 const cpp_sources = &[_][]const u8{
-    "src/main.cpp",
-    "src/allo_impl.cpp",
-    "src/level.cpp",
-    "src/physics.cpp",
-    "src/space.cpp",
-    "src/shape.cpp",
     "src/body.cpp",
+    "src/level.cpp",
+    "src/main.cpp",
+    "src/physics.cpp",
+    "src/shape.cpp",
+    "src/space.cpp",
+    "src/terrain.cpp",
+    "src/vect.cpp",
     "src/natural_log/natural_log.cpp",
 };
 
@@ -38,8 +39,8 @@ pub fn build(b: *std.Build) !void {
 
     // import libraries
     const okaylib = b.dependency("okaylib", .{ .target = target, .optimize = optimize });
-    const raylib = b.dependency("raylib", .{ .target = target, .optimize = optimize, .linux_display_backend = .X11 }).artifact("raylib");
-    const chipmunk = b.dependency("chipmunk2d", .{ .target = target, .optimize = optimize }).artifact("chipmunk");
+    const raylib = b.dependency("raylib", .{ .target = target, .optimize = optimize, .linux_display_backend = .X11 });
+    const chipmunk = b.dependency("chipmunk2d", .{ .target = target, .optimize = optimize });
 
     const final_flags = try flags.toOwnedSlice();
 
@@ -59,8 +60,10 @@ pub fn build(b: *std.Build) !void {
     exe.step.dependOn(okaylib.builder.getInstallStep());
     exe.addIncludePath(okaylib.builder.path("include/"));
     exe.linkLibCpp();
-    exe.linkLibrary(raylib);
-    exe.linkLibrary(chipmunk);
+    exe.linkLibrary(raylib.artifact("raylib"));
+    exe.linkLibrary(chipmunk.artifact("chipmunk"));
+    // raylib's include paths are wrong, they include the headers directly with -I/path/to/include/header.h instead of -I/path/to/include
+    exe.addIncludePath(raylib.builder.path("src/"));
 
     b.installArtifact(exe);
 

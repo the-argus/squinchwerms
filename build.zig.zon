@@ -12,8 +12,9 @@
     },
     .dependencies = .{
         .okaylib = .{
-            .url = "https://github.com/the-argus/okaylib/archive/d4c4aa8106a28ba40d2b4d7027a0dc2622fc9cdd.tar.gz",
-            .hash = "1220bda62232d0304b46661c0a85b5d8d52fa6d1b764c1b2b92ea4d3f73133165fa3",
+            .url = "https://github.com/the-argus/okaylib/archive/f10b8c2f039c02a06f29fa057d3a0d4136f5ed03.tar.gz",
+            .hash = "12205709c9393acbc416a722969bdd758999a1c6fa76b1ef20300a97eca5f25929b3",
+            // .hash = "1220aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
         },
         .compile_commands = .{
             .url = "https://github.com/the-argus/zig-compile-commands/archive/34ffa4290ca4fc060168e8eca9574ff11002fb0b.tar.gz",
