@@ -12,8 +12,8 @@
     },
     .dependencies = .{
         .okaylib = .{
-            .url = "https://github.com/the-argus/okaylib/archive/f10b8c2f039c02a06f29fa057d3a0d4136f5ed03.tar.gz",
-            .hash = "12205709c9393acbc416a722969bdd758999a1c6fa76b1ef20300a97eca5f25929b3",
+            .url = "https://github.com/the-argus/okaylib/archive/b7775353ac56af4aca667edd30937c245a08997c.tar.gz",
+            .hash = "12207880ba65e00c9507111537293692de6856a4ef55c43faf2f94653411d2bbb73a",
             // .hash = "1220aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
         },
         .compile_commands = .{
