@@ -1,21 +1,44 @@
 #include "body.h"
-#include "chipmunk/chipmunk_structs.h"
 #include <cassert>
 #include <cstring>
 
 namespace lib {
 float Body::torque() const { return cpBodyGetTorque(this); }
-void Body::set_torque(float torque) { return cpBodySetTorque(this, torque); }
+Body &Body::setTorque(float torque)
+{
+    cpBodySetTorque(this, torque);
+    return *this;
+}
 float Body::moment() const { return cpBodyGetMoment(this); }
-void Body::set_moment(float moment) { cpBodySetMoment(this, moment); }
+Body &Body::setMoment(float moment)
+{
+    cpBodySetMoment(this, moment);
+    return *this;
+}
 Vect Body::velocity() const { return cpBodyGetVelocity(this); }
-void Body::set_velocity(Vect velocity) { cpBodySetVelocity(this, velocity); }
+Body &Body::setVelocity(Vect velocity)
+{
+    cpBodySetVelocity(this, velocity);
+    return *this;
+}
 Vect Body::position() const { return cpBodyGetPosition(this); }
-void Body::set_position(Vect position) { cpBodySetPosition(this, position); }
+Body &Body::setPosition(Vect position)
+{
+    cpBodySetPosition(this, position);
+    return *this;
+}
 Vect Body::force() const { return cpBodyGetForce(this); }
-void Body::set_force(Vect force) { cpBodySetForce(this, force); }
+Body &Body::setForce(Vect force)
+{
+    cpBodySetForce(this, force);
+    return *this;
+}
 float Body::angle() const { return cpBodyGetAngle(this); }
-void Body::set_angle(float angle) { cpBodySetAngle(this, angle); }
+Body &Body::setAngle(float angle)
+{
+    cpBodySetAngle(this, angle);
+    return *this;
+}
 
 // read-only
 lib::Body::Type Body::type() { return lib::Body::Type(cpBodyGetType(this)); }
@@ -29,20 +52,20 @@ void Body::_add_to_space(Space *_space)
 
 void Body::free()
 {
-    remove_from_space();
+    removeFromSpace();
     // this function does nothing as of cp 7.0.3
     cpBodyDestroy(this);
 }
-void Body::remove_from_space()
+void Body::removeFromSpace()
 {
     if (space != nullptr)
         cpSpaceRemoveBody(space, this);
 }
 
 cpDampedSpring *
-Body::connect_with_damped_spring(cpDampedSpring *connection, Body *other,
-                                 Vect point_on_this, Vect point_on_other,
-                                 const spring_options_t &options)
+Body::connectWithDampedSpringAtPoints(cpDampedSpring *connection, Body *other,
+                                      Vect point_on_this, Vect point_on_other,
+                                      const SpringOptions &options)
 {
     assert(space != nullptr);
 
@@ -55,17 +78,16 @@ Body::connect_with_damped_spring(cpDampedSpring *connection, Body *other,
     return connection;
 }
 
-cpDampedSpring *
-Body::connect_with_damped_spring(cpDampedSpring *connection, Body *other,
-                                 const spring_options_t &options)
+cpDampedSpring *Body::connectWithDampedSpring(cpDampedSpring *connection,
+                                              Body *other,
+                                              const SpringOptions &options)
 {
-    return connect_with_damped_spring(connection, other, {0, 0}, {0, 0},
-                                      options);
+    return connectWithDampedSpringAtPoints(connection, other, {0, 0}, {0, 0},
+                                           options);
 }
 
-cpSimpleMotor *
-Body::connect_with_simple_motor(cpSimpleMotor *motor, Body *other,
-                                const simple_motor_options_t &options)
+cpSimpleMotor *Body::connectWithSimpleMotor(cpSimpleMotor *motor, Body *other,
+                                            const SimpleMotorOptions &options)
 {
     assert(space != nullptr);
 

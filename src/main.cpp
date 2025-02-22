@@ -1,12 +1,13 @@
-#include "level.h"
-#include "natural_log/natural_log.h"
-#include "physics.h"
-#include "terrain.h"
-#include "vect.h"
-#include <allo.h>
-#include <cstddef>
 #include <raylib.h>
-#include <ziglike/zigstdint.h>
+
+#include "game.h"
+#include "natural_log/natural_log.h"
+#include "vect.h"
+#include <cstddef>
+#include <okay/allocators/arena.h>
+#include <okay/allocators/c_allocator.h>
+#include <okay/short_arithmetic_types.h>
+#include <raylib.h>
 
 using namespace lib;
 
@@ -17,6 +18,7 @@ static Camera2D camera;
 
 int main()
 {
+    using namespace werm;
     ln::init();
     InitWindow(render_size.x, render_size.y, "Squinchwerms");
     SetTargetFPS(fps);
@@ -27,80 +29,48 @@ int main()
         .zoom = 1,
     };
 
-    // initialize level allocators
-    if (!werm::init_level().okay()) {
-        LN_FATAL("Unable to initialize level");
-        std::abort();
-    }
+    ok::c_allocator_t backing;
+    ok::arena_t levelArena(
+        backing.allocate({.num_bytes = 1024 * 1024}).release().as_bytes(),
+        backing);
 
-    auto physics_res = werm::PhysicsSystem::make_with(werm::level_allocator());
-    if (!physics_res.okay()) {
-        LN_FATAL("Unable to initialize physics");
-        // no need to clear level allocator, this is an unrecoverable error
-        std::abort();
-    }
-    werm::PhysicsSystem &physics = physics_res.release();
+    Game game{
+        .backingHeapAllocator = backing,
+        .levelArena = levelArena,
+        .meshes = {.backingAllocator = levelArena},
+        .physics =
+            {
+                .bodies = {.backingAllocator = levelArena},
+                .polyShapes = {.backingAllocator = levelArena},
+                .segmentShapes = {.backingAllocator = levelArena},
+                .space = lib::Space{},
+            },
+    };
 
-    auto terrain_res = werm::Terrain::make_with(werm::level_allocator(),
-                                                {.x = 100, .y = 100}, 2);
-    if (!terrain_res) {
-        LN_FATAL("Unable to initialize terrain");
-        std::abort();
-    }
-
-    werm::Terrain &terrain = terrain_res.value();
-
-    werm::BodyRef begin = physics
-                              .create_body({.type = lib::Body::Type::DYNAMIC,
-                                            .mass = 10,
-                                            .moment = INFINITY})
-                              .value();
-    begin->set_position({0, 100});
-    werm::BodyRef end = physics
-                            .create_body({.type = lib::Body::Type::DYNAMIC,
-                                          .mass = 10,
-                                          .moment = INFINITY})
-                            .value();
-    end->set_position({100, 100});
-
-    // spring exists for the whole level so just put it on the level stack
-    werm::DampedSpringRef spring =
-        physics
-            .connect_with_damped_spring(
-                werm::level_allocator(), begin, end,
-                {.length = 10, .stiffness = 1, .damping = 1})
-            .value();
-
-    lib::Rect floor = {{0, 0}, {800, 10}};
-    physics.create_square(physics.static_body(),
-                          {.bounding = floor, .radius = 1});
-
-    Texture end_tex = LoadTexture("assets/img/werm/end.png");
-    Texture begin_tex = LoadTexture("assets/img/werm/head.png");
+    auto playerBody = game.physics.bodies.make(lib::Body::BodyOptions{
+        .type = lib::Body::Type::DYNAMIC,
+        .mass = 1,
+        .moment = 0.1f,
+    });
 
     while (!WindowShouldClose()) {
-        // clear any frame-specific allocations
-        werm::clear_frame();
-        // update
-        {
-            physics.update();
-        }
+        game.physics.space.step(1.0f / 60.0f);
 
         // draw
         BeginDrawing();
         ClearBackground(WHITE);
         BeginMode2D(camera);
-        DrawTextureV(end_tex, end->position(), WHITE);
-        DrawTextureV(begin_tex, begin->position(), WHITE);
-        DrawRectangleRec(floor, BLACK);
-        //terrain.draw();
         EndMode2D();
         EndDrawing();
     }
 
     CloseWindow();
 
-    werm::clear_level();
-    // WARN: all items allocated in level allocator are now invalid
+    game.physics.bodies.forEach([](auto item) { cpBodyDestroy(&item.self); });
+    cpSpaceDestroy(&game.physics.space);
+    game.meshes.forEach([](auto item) { UnloadMesh(item.self); });
+
+    levelArena.destroy();
+
     return 0;
 }

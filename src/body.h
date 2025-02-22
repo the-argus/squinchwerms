@@ -1,5 +1,4 @@
 #pragma once
-#include "chipmunk/chipmunk_structs.h"
 #include "shape.h"
 #include "vect.h"
 #include <cstring>
@@ -16,14 +15,14 @@ class Body : public ::cpBody
     };
     Body() = delete;
 
-    struct body_options_t
+    struct BodyOptions
     {
         Type type;
         float mass;
         float moment;
     };
 
-    inline Body(const body_options_t &options)
+    constexpr Body(const BodyOptions &options)
     {
         std::memset(static_cast<cpBody *>(this), 0, sizeof(cpBody));
         /// Initialize fields used by chipmunk to determine what type something
@@ -48,53 +47,52 @@ class Body : public ::cpBody
 
     // fields
     [[nodiscard]] float torque() const;
-    void set_torque(float torque);
+    Body &setTorque(float torque);
     [[nodiscard]] float moment() const;
-    void set_moment(float moment);
+    Body &setMoment(float moment);
     [[nodiscard]] Vect velocity() const;
-    void set_velocity(Vect velocity);
+    Body &setVelocity(Vect velocity);
     [[nodiscard]] Vect position() const;
-    void set_position(Vect position);
+    Body &setPosition(Vect position);
     [[nodiscard]] Vect force() const;
-    void set_force(Vect force);
+    Body &setForce(Vect force);
     [[nodiscard]] float angle() const;
-    void set_angle(float angle);
-    [[nodiscard]] cpDataPointer user_data() const;
-    void set_user_data(cpDataPointer data);
+    Body &setAngle(float angle);
+    [[nodiscard]] cpDataPointer userData() const;
+    Body &setUserData(cpDataPointer data);
 
     void free();
 
     // read-only
     [[nodiscard]] Type type();
 
-    struct spring_options_t
+    struct SpringOptions
     {
         float length;
         float stiffness;
         float damping;
     };
 
-    cpDampedSpring *connect_with_damped_spring(cpDampedSpring *connection,
-                                               Body *other, Vect point_on_this,
-                                               Vect point_on_other,
-                                               const spring_options_t &options);
-    cpDampedSpring *connect_with_damped_spring(cpDampedSpring *connection,
-                                               Body *other,
-                                               const spring_options_t &options);
+    cpDampedSpring *connectWithDampedSpring(cpDampedSpring *connection,
+                                            Body *other,
+                                            const SpringOptions &options);
+    cpDampedSpring *
+    connectWithDampedSpringAtPoints(cpDampedSpring *connection, Body *other,
+                                    Vect point_on_this, Vect point_on_other,
+                                    const SpringOptions &options);
 
-    struct simple_motor_options_t
+    struct SimpleMotorOptions
     {
         float rate;
     };
 
-    cpSimpleMotor *
-    connect_with_simple_motor(cpSimpleMotor *motor, Body *other,
-                              const simple_motor_options_t &options);
+    cpSimpleMotor *connectWithSimpleMotor(cpSimpleMotor *motor, Body *other,
+                                          const SimpleMotorOptions &options);
 
     ///
     /// Remove this body from its internal space.
     ///
-    void remove_from_space();
+    void removeFromSpace();
 
   private:
     // functions
