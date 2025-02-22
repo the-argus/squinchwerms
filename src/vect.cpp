@@ -1,6 +1,8 @@
 #include "vect.h"
 #include "raymath.h"
 
+#include <cmath>
+
 namespace lib {
 // math functions
 float Vect::magnitude() const noexcept { return cpvlength(*this); }

@@ -18,10 +18,9 @@ const universal_flags = &[_][]const u8{
 const cpp_sources = &[_][]const u8{
     "src/body.cpp",
     "src/main.cpp",
-    "src/physics.cpp",
     "src/shape.cpp",
     "src/space.cpp",
-    "src/terrain.cpp",
+    // "src/terrain.cpp",
     "src/vect.cpp",
     "src/natural_log/natural_log.cpp",
 };
