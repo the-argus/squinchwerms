@@ -98,15 +98,16 @@ template <typename T> struct LinkedPool
         bytes = bytes.subslice({.start = 0, .length = num_items});
         auto new_items =
             ok::raw_slice(*reinterpret_cast<Item *>(bytes.data()), num_items);
-        for (u64 i = 0; i < new_items.size(); ++i) {
+        for (u64 i = 0; i < new_items.size() - 1; ++i) {
             Item &item = new_items[i];
             item.free = true;
-            if (i + 1 != new_items.size()) {
-                item.next = new_items[i + 1];
-            } else {
-                item.next = ok::nullopt;
-            }
+            new (&item.next) ok::opt_t<Item &>(new_items[i + 1]);
         }
+
+        Item &last = new_items[new_items.size() - 1];
+        last.free = true;
+        new (&last.next) ok::opt_t<Item &>(head);
+        head = new_items[0];
 
         return ok::alloc::error::okay;
     }

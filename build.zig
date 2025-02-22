@@ -40,7 +40,7 @@ pub fn build(b: *std.Build) !void {
     // import libraries
     const okaylib = b.dependency("okaylib", .{ .target = target, .optimize = optimize });
     const raylib = b.dependency("raylib", .{ .target = target, .optimize = optimize, .linux_display_backend = .X11 });
-    const chipmunk = b.dependency("chipmunk2d", .{ .target = target, .optimize = optimize });
+    const chipmunk = b.dependency("chipmunk2d", .{ .target = target, .optimize = optimize, .use_doubles = false });
 
     // TODO: okaylib should propagate this to us but its not working, manually including it
     const fmt = b.dependency("fmt", .{});

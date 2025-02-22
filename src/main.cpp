@@ -31,7 +31,8 @@ int main()
 
     ok::c_allocator_t backing;
     ok::arena_t levelArena(
-        backing.allocate({.num_bytes = 1024 * 1024}).release().as_bytes());
+        backing.allocate({.num_bytes = 1024 * 1024}).release().as_bytes(),
+        backing);
 
     Game game{
         .backingHeapAllocator = backing,
@@ -65,6 +66,8 @@ int main()
 
     CloseWindow();
 
+    game.physics.bodies.forEach([](auto item) { cpBodyDestroy(&item.self); });
+    cpSpaceDestroy(&game.physics.space);
     game.meshes.forEach([](auto item) { UnloadMesh(item.self); });
 
     levelArena.destroy();
