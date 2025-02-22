@@ -1,14 +1,14 @@
 #include <raylib.h>
 
-#include "level.h"
 #include "natural_log/natural_log.h"
 #include "physics.h"
 #include "terrain.h"
 #include "vect.h"
-#include <allo.h>
 #include <cstddef>
+#include <okay/allocators/arena.h>
+#include <okay/allocators/c_allocator.h>
+#include <okay/short_arithmetic_types.h>
 #include <raylib.h>
-#include <ziglike/zigstdint.h>
 
 using namespace lib;
 
@@ -19,6 +19,7 @@ static Camera2D camera;
 
 int main()
 {
+	using namespace werm;
     ln::init();
     InitWindow(render_size.x, render_size.y, "Squinchwerms");
     SetTargetFPS(fps);
@@ -29,20 +30,15 @@ int main()
         .zoom = 1,
     };
 
-    // initialize level allocators
-    if (!werm::init_level().okay()) {
-        LN_FATAL("Unable to initialize level");
-        std::abort();
-    }
+    ok::c_allocator_t backing;
+    ok::arena_t physics_arena(
+        backing.allocate({.num_bytes = 1024 * 1024}).release().as_bytes());
+    ok::arena_t level_arena(
+        backing.allocate({.num_bytes = 1024 * 1024}).release().as_bytes());
 
-    auto physics_res = werm::PhysicsSystem::make_with(werm::level_allocator());
-    if (!physics_res.okay()) {
-        LN_FATAL("Unable to initialize physics");
-        // no need to clear level allocator, this is an unrecoverable error
-        std::abort();
-    }
-    werm::PhysicsSystem &physics = physics_res.release();
+	auto& physics = physics_arena.make<PhysicsSystem>().release();
 
+	auto terrain = level_arena.make<Terrain, amount_filled_tag>(Terrain::Coord{.x = 100, .y = 100}, 2).release();
     auto terrain_res = werm::Terrain::make_with(werm::level_allocator(),
                                                 {.x = 100, .y = 100}, 2);
     if (!terrain_res) {
@@ -95,7 +91,7 @@ int main()
         DrawTextureV(end_tex, end->position(), WHITE);
         DrawTextureV(begin_tex, begin->position(), WHITE);
         DrawRectangleRec(floor, BLACK);
-        //terrain.draw();
+        // terrain.draw();
         EndMode2D();
         EndDrawing();
     }

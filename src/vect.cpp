@@ -4,7 +4,7 @@
 namespace lib {
 // math functions
 float Vect::magnitude() const noexcept { return cpvlength(*this); }
-float Vect::magnitude_sq() const noexcept { return cpvlengthsq(*this); }
+float Vect::magnitudeSquared() const noexcept { return cpvlengthsq(*this); }
 Vect Vect::perpendicular() const noexcept { return cpvperp(cpv(x, y)); }
 Vect Vect::negative() const noexcept { return cpvneg(cpv(x, y)); }
 float Vect::dot(const Vect &other) const noexcept
@@ -23,28 +23,44 @@ float Vect::cross(const Vect &other) const noexcept
 float GetDist(Vect other);
 
 // modifiers
-void Vect::Negate() noexcept
+Vect &Vect::negateThis() noexcept
 {
     Vect neg = negative();
     x = neg.x;
     y = neg.y;
+    return *this;
 }
-void Vect::Clamp(float length) noexcept { *this = clamped(length); }
-void Vect::Normalize() noexcept { *this = normalized(); }
-void Vect::Scale(float scale) noexcept { *this = *this * scale; }
-void Vect::ClampComponentwise(const lib::Vect &lower,
-                              const lib::Vect &upper) noexcept
+Vect &Vect::clampThis(float length) noexcept
+{
+    *this = clamped(length);
+    return *this;
+}
+Vect &Vect::normalizeThis() noexcept
+{
+    *this = normalized();
+    return *this;
+}
+Vect &Vect::scaleThis(float scale) noexcept
+{
+    *this = *this * scale;
+    return *this;
+}
+Vect &Vect::clampThisComponentwise(const lib::Vect &lower,
+                                   const lib::Vect &upper) noexcept
 {
     *this = ::Vector2Clamp(*this, lower, upper);
+    return *this;
 }
-void Vect::Round() noexcept
+Vect &Vect::roundThis() noexcept
 {
     x = std::round(x);
     y = std::round(y);
+    return *this;
 }
-void Vect::Truncate() noexcept
+Vect &Vect::truncateThis() noexcept
 {
     x = float(int(x));
     y = float(int(y));
+    return *this;
 }
 } // namespace lib

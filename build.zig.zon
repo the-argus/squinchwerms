@@ -16,6 +16,10 @@
             .hash = "12207880ba65e00c9507111537293692de6856a4ef55c43faf2f94653411d2bbb73a",
             // .hash = "1220aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
         },
+        .fmt = .{
+            .url = "https://github.com/the-argus/fmt/archive/d5ad6ce7ab711d601ffbf0706740279617b43325.tar.gz",
+            .hash = "1220727ae90b421da0d3e09aa9449a55eff672fdab47f62dd661dc1b5634ea78b56a",
+        },
         .compile_commands = .{
             .url = "https://github.com/the-argus/zig-compile-commands/archive/34ffa4290ca4fc060168e8eca9574ff11002fb0b.tar.gz",
             .hash = "12209264387a67972ccebb9ff53a08b2ee8519f5f9b93b9d400a144d849528136ead",

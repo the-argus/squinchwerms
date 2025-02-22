@@ -2,7 +2,7 @@
 
 namespace lib {
 void Space::add(Body &body) noexcept { body._add_to_space(this); }
-void Space::add(Shape &shape) noexcept { shape._add_to_space(this); }
+void Space::add(Shape &shape) noexcept { shape._add_to_space(*this); }
 void Space::remove(Body &body) noexcept { cpSpaceRemoveBody(this, &body); }
 void Space::remove(Shape &shape) noexcept { cpSpaceRemoveShape(this, &shape); }
 void Space::remove(cpConstraint &constraint) noexcept
@@ -14,71 +14,79 @@ void Space::remove(cpDampedSpring &constraint) noexcept
     remove(*(cpConstraint *)&constraint);
 }
 float Space::damping() const noexcept { return cpSpaceGetDamping(this); }
-void Space::set_damping(float damping) noexcept
+Space &Space::setDamping(float damping) noexcept
 {
     cpSpaceSetDamping(this, damping);
+    return *this;
 }
 Vect Space::gravity() const noexcept { return cpSpaceGetGravity(this); }
-void Space::set_gravity(Vect gravity) noexcept
+Space &Space::setGravity(Vect gravity) noexcept
 {
     cpSpaceSetGravity(this, gravity);
+    return *this;
 }
-cpTimestamp Space::collision_persistence() const noexcept
+cpTimestamp Space::collisionPersistence() const noexcept
 {
     return cpSpaceGetCollisionPersistence(this);
 }
-void Space::set_collision_persistence(cpTimestamp persistence) noexcept
+Space &Space::setCollisionPersistence(cpTimestamp persistence) noexcept
 {
     cpSpaceSetCollisionPersistence(this, persistence);
+    return *this;
 }
-cpDataPointer Space::user_data() const noexcept
+cpDataPointer Space::userData() const noexcept
 {
     return cpSpaceGetUserData(this);
 }
-void Space::set_user_data(cpDataPointer data) noexcept
+Space &Space::setUserData(cpDataPointer data) noexcept
 {
     cpSpaceSetUserData(this, data);
+    return *this;
 }
-void Space::set_collision_bias(float bias) noexcept
+Space &Space::setCollisionBias(float bias) noexcept
 {
     cpSpaceSetCollisionBias(this, bias);
+    return *this;
 }
-float Space::collision_bias() const noexcept
+float Space::collisionBias() const noexcept
 {
     return cpSpaceGetCollisionBias(this);
 }
-void Space::set_collision_slop(float slop) noexcept
+Space &Space::setCollisionSlop(float slop) noexcept
 {
     cpSpaceSetCollisionSlop(this, slop);
+    return *this;
 }
-float Space::collision_slop() const noexcept
+float Space::collisionSlop() const noexcept
 {
     return cpSpaceGetCollisionSlop(this);
 }
-void Space::set_idle_speed_threshold(float threshold) noexcept
+Space &Space::setIdleSpeedThreshold(float threshold) noexcept
 {
     cpSpaceSetIdleSpeedThreshold(this, threshold);
+    return *this;
 }
-float Space::idle_speed_threshold() const noexcept
+float Space::idleSpeedThreshold() const noexcept
 {
     return cpSpaceGetIdleSpeedThreshold(this);
 }
 int Space::iterations() const noexcept { return cpSpaceGetIterations(this); }
-void Space::set_iterations(int iterations) noexcept
+Space &Space::setIterations(int iterations) noexcept
 {
     cpSpaceSetIterations(this, iterations);
+    return *this;
 }
 
 // read only
-float Space::get_sleep_time_threshold() const noexcept
+float Space::getSleepTimeThreshold() const noexcept
 {
     return cpSpaceGetSleepTimeThreshold(this);
 }
-Body *Space::get_static_body() noexcept
+Body &Space::getStaticBody() noexcept
 {
-    return static_cast<Body *>(cpSpaceGetStaticBody(this));
+    return *static_cast<Body *>(cpSpaceGetStaticBody(this));
 }
-float Space::get_current_time_step() const noexcept
+float Space::getCurrentTimeStep() const noexcept
 {
     return cpSpaceGetCurrentTimeStep(this);
 }

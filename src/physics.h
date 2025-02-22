@@ -1,17 +1,11 @@
 #pragma once
 #include "body.h"
+#include "okay/allocators/allocator.h"
 #include "space.h"
-#include <allo.h>
-#include <allo/block_allocator.h>
 #include <chipmunk/chipmunk_structs.h>
-#include <ziglike/opt.h>
+#include <okay/opt.h>
 
 namespace werm {
-using BodyRef = lib::Body *;
-using ShapeRef = lib::Shape *;
-using PolyShapeRef = lib::PolyShape *;
-using SegmentShapeRef = lib::SegmentShape *;
-using DampedSpringRef = cpDampedSpring *;
 
 class PhysicsSystem
 {
@@ -22,48 +16,48 @@ class PhysicsSystem
     static PhysicsSystem &singleton() noexcept;
     void register_singleton() noexcept;
 
-    static zl::res<PhysicsSystem &, allo::AllocationStatusCode>
-    make_with(allo::abstract_allocator_t &parent) noexcept;
+    explicit PhysicsSystem() noexcept;
 
     // allocate a damped spring and connect two bodies with it.
-    zl::opt<DampedSpringRef> connect_with_damped_spring(
-        allo::abstract_allocator_t &allocator, BodyRef a, BodyRef b,
-        const lib::Body::spring_options_t &options) noexcept;
+    ok::opt_t<::cpDampedSpring &>
+    connectWithDampedSpring(ok::allocator_t &allocator, lib::Body &a,
+                            lib::Body &b,
+                            const lib::Body::SpringOptions &options) noexcept;
 
     void update() noexcept;
 
-    BodyRef static_body() noexcept;
+    lib::Body &staticBody() noexcept;
 
-    zl::opt<BodyRef>
-    create_body(const lib::Body::body_options_t &options) noexcept;
+    ok::opt_t<lib::Body &>
+    createBody(const lib::Body::BodyOptions &options) noexcept;
 
-    void destroy_body(BodyRef) noexcept;
+    void destroy_body(lib::Body &) noexcept;
 
-    zl::opt<SegmentShapeRef>
-    create_segment_shape(BodyRef body,
-                         const lib::SegmentShape::options_t &options) noexcept;
+    ok::opt_t<lib::SegmentShape &>
+    create_segment_shape(lib::Body &body,
+                         const lib::SegmentShape::Options &options) noexcept;
 
-    zl::opt<PolyShapeRef> create_poly_shape(
-        BodyRef body,
-        const lib::PolyShape::default_options_t &options) noexcept;
+    ok::opt_t<lib::PolyShape &>
+    createPolyShape(lib::Body &body,
+                    const lib::PolyShape::DefaultOptions &options) noexcept;
 
-    zl::opt<PolyShapeRef>
-    create_square(BodyRef body,
-                  const lib::PolyShape::square_options_t &options) noexcept;
+    ok::opt_t<lib::PolyShape &>
+    createSquare(lib::Body &body,
+                 const lib::PolyShape::SquareOptions &options) noexcept;
 
-    void destroy_shape(ShapeRef) noexcept;
+    void destroyShape(lib::Shape &) noexcept;
 
-    void destroy_poly_shape(PolyShapeRef) noexcept;
+    void destroyPolyShape(lib::PolyShape &) noexcept;
 
-    void destroy_segment_shape(SegmentShapeRef) noexcept;
+    void destroySegmentShape(lib::SegmentShape &) noexcept;
 
   private:
     struct M
     {
-        allo::block_allocator_t bodies;
-        allo::block_allocator_t polys;
-        allo::block_allocator_t segments;
-        zl::slice<uint8_t> polys_mem;
+        ok::allocator_t &bodies;
+        ok::allocator_t &polys;
+        ok::allocator_t &segments;
+        ok::bytes_t polysMem;
         lib::Space space;
     } m;
 };

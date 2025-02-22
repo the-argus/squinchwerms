@@ -12,18 +12,18 @@ thread_local char threadbuf[bufsize];
 }; // namespace ln::detail
 
 static void internal(int msgType, const char *text, va_list args) noexcept;
-static std::atomic<ln::level_e> minLevel = ln::level_e::ALL;
+static std::atomic<ln::LogLevel> minLevel = ln::LogLevel::ALL;
 
 // make sure raylib matches up with our types so we can convert safely
 // clang-format off
-static_assert(std::underlying_type_t<ln::level_e>(ln::level_e::ALL) == static_cast<int>(::LOG_ALL));
-static_assert(std::underlying_type_t<ln::level_e>(ln::level_e::TRACE) == static_cast<int>(::LOG_TRACE));
-static_assert(std::underlying_type_t<ln::level_e>(ln::level_e::DEBUG) == static_cast<int>(::LOG_DEBUG));
-static_assert(std::underlying_type_t<ln::level_e>(ln::level_e::INFO) == static_cast<int>(::LOG_INFO));
-static_assert(std::underlying_type_t<ln::level_e>(ln::level_e::WARNING) == static_cast<int>(::LOG_WARNING));
-static_assert(std::underlying_type_t<ln::level_e>(ln::level_e::ERROR) == static_cast<int>(::LOG_ERROR));
-static_assert(std::underlying_type_t<ln::level_e>(ln::level_e::FATAL) == static_cast<int>(::LOG_FATAL));
-static_assert(std::underlying_type_t<ln::level_e>(ln::level_e::NONE) == static_cast<int>(::LOG_NONE));
+static_assert(std::underlying_type_t<ln::LogLevel>(ln::LogLevel::ALL) == static_cast<int>(::LOG_ALL));
+static_assert(std::underlying_type_t<ln::LogLevel>(ln::LogLevel::TRACE) == static_cast<int>(::LOG_TRACE));
+static_assert(std::underlying_type_t<ln::LogLevel>(ln::LogLevel::DEBUG) == static_cast<int>(::LOG_DEBUG));
+static_assert(std::underlying_type_t<ln::LogLevel>(ln::LogLevel::INFO) == static_cast<int>(::LOG_INFO));
+static_assert(std::underlying_type_t<ln::LogLevel>(ln::LogLevel::WARNING) == static_cast<int>(::LOG_WARNING));
+static_assert(std::underlying_type_t<ln::LogLevel>(ln::LogLevel::ERROR) == static_cast<int>(::LOG_ERROR));
+static_assert(std::underlying_type_t<ln::LogLevel>(ln::LogLevel::FATAL) == static_cast<int>(::LOG_FATAL));
+static_assert(std::underlying_type_t<ln::LogLevel>(ln::LogLevel::NONE) == static_cast<int>(::LOG_NONE));
 // clang-format on
 
 namespace ln {
@@ -31,13 +31,13 @@ namespace ln {
 // tell raylib to use our internal colored logger
 void init() noexcept { SetTraceLogCallback(internal); }
 
-void set_minimum_level(level_e level) noexcept
+void set_minimum_level(LogLevel level) noexcept
 {
-    SetTraceLogLevel(std::underlying_type_t<level_e>(level));
+    SetTraceLogLevel(std::underlying_type_t<LogLevel>(level));
     minLevel = level;
 }
 
-void log(level_e level, fmt::string_view message) noexcept
+void log(LogLevel level, fmt::string_view message) noexcept
 {
     static std::mutex logmutex;
     std::lock_guard lock(logmutex);
@@ -50,31 +50,31 @@ void log(level_e level, fmt::string_view message) noexcept
     }
 
     switch (level) {
-    case level_e::INFO:
+    case LogLevel::INFO:
         fmt::print(fmt::emphasis::bold | fmt::fg(fmt::color::white),
                    "[INFO] : ");
         break;
-    case level_e::ERROR:
+    case LogLevel::ERROR:
         fmt::print(fmt::emphasis::bold | fmt::fg(fmt::color::red),
                    "[ERROR] : ");
         break;
-    case level_e::WARNING:
+    case LogLevel::WARNING:
         fmt::print(fmt::emphasis::bold | fmt::fg(fmt::color::yellow),
                    "[WARN] : ");
         break;
-    case level_e::DEBUG:
+    case LogLevel::DEBUG:
         fmt::print(fmt::emphasis::bold | fmt::fg(fmt::color::green),
                    "[DEBUG] : ");
         break;
-    case level_e::FATAL:
+    case LogLevel::FATAL:
         fmt::print(fmt::emphasis::bold | fmt::fg(fmt::color::red),
                    "[FATAL] : ");
         break;
-    case level_e::TRACE:
+    case LogLevel::TRACE:
         fmt::print(fmt::emphasis::bold | fmt::fg(fmt::color::cyan),
                    "[TRACE] : ");
         break;
-    case level_e::NONE:
+    case LogLevel::NONE:
         fmt::print(fmt::emphasis::bold | fmt::fg(fmt::color::yellow),
                    "[UNDEFINED NONELEVEL] : ");
         break;
@@ -94,14 +94,14 @@ static void internal(int msgType, const char *text, va_list args) noexcept
     std::array<char, 512> buffer;
     int bytesPrinted = vsnprintf(buffer.data(), buffer.size(), text, args);
     if (bytesPrinted < 0) {
-        ln::log(ln::level_e::WARNING,
+        ln::log(ln::LogLevel::WARNING,
                 "encoding error occured when trying to print string");
         return;
     }
 
     if (bytesPrinted > buffer.size())
-        log(ln::level_e::WARNING,
+        log(ln::LogLevel::WARNING,
             "Failed to completely print the following message:");
 
-    ln::log(static_cast<ln::level_e>(msgType), buffer.data());
+    ln::log(static_cast<ln::LogLevel>(msgType), buffer.data());
 }

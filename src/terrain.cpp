@@ -86,7 +86,7 @@ void Terrain::draw() const noexcept
     Matrix transform = MatrixIdentity();
     ok_foreach(const auto &chunk, m.chunks)
     {
-        DrawMesh(chunk.mesh, m.chunk_mat, transform);
+        DrawMesh(chunk.mesh, m.chunkMaterial, transform);
     }
 }
 } // namespace werm

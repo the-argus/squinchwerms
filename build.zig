@@ -11,11 +11,12 @@ const universal_flags = &[_][]const u8{
     "-std=c++20",
     "-Isrc/",
     "-DFMT_HEADER_ONLY",
+    "-Werror",
+    "-Wno-deprecated",
 };
 
 const cpp_sources = &[_][]const u8{
     "src/body.cpp",
-    "src/level.cpp",
     "src/main.cpp",
     "src/physics.cpp",
     "src/shape.cpp",
@@ -42,6 +43,11 @@ pub fn build(b: *std.Build) !void {
     const raylib = b.dependency("raylib", .{ .target = target, .optimize = optimize, .linux_display_backend = .X11 });
     const chipmunk = b.dependency("chipmunk2d", .{ .target = target, .optimize = optimize });
 
+    // TODO: okaylib should propagate this to us but its not working, manually including it
+    const fmt = b.dependency("fmt", .{});
+    const fmt_include_path = b.pathJoin(&.{ fmt.builder.install_path, "include" });
+    try flags.append(b.fmt("-I{s}", .{fmt_include_path}));
+
     const final_flags = try flags.toOwnedSlice();
 
     const exe = b.addExecutable(.{
@@ -58,6 +64,7 @@ pub fn build(b: *std.Build) !void {
 
     // link libraries
     exe.step.dependOn(okaylib.builder.getInstallStep());
+    exe.step.dependOn(fmt.builder.getInstallStep());
     exe.addIncludePath(okaylib.builder.path("include/"));
     exe.linkLibCpp();
     exe.linkLibrary(raylib.artifact("raylib"));
