@@ -85,7 +85,7 @@ class PolyShape : public ::cpPolyShape
     struct SquareOptions
     {
         Rect bounding;
-        float radius;
+        float radius = 0.1f;
     };
 
     PolyShape(Body &body, const SquareOptions &options);

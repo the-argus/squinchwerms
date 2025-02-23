@@ -79,7 +79,7 @@ template <typename T> struct LinkedPool
             if (!value.free) {
                 callable(value);
             }
-            item = value;
+            item = value.next;
         }
     }
 

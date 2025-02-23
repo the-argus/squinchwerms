@@ -47,11 +47,21 @@ int main()
             },
     };
 
-    auto playerBody = game.physics.bodies.make(lib::Body::BodyOptions{
-        .type = lib::Body::Type::DYNAMIC,
-        .mass = 1,
-        .moment = 0.1f,
-    });
+    lib::Body &playerBody = game.physics.bodies
+                                .make(lib::Body::BodyOptions{
+                                    .type = lib::Body::Type::DYNAMIC,
+                                    .mass = 1,
+                                    .moment = 0.1f,
+                                })
+                                .release();
+    lib::PolyShape &playerShape =
+        game.physics.polyShapes
+            .make(playerBody,
+                  lib::PolyShape::SquareOptions{
+                      Rect::unitSquare().at({0, 0}).scaledBy(1.f)})
+            .release();
+
+    game.physics.space.add(playerBody);
 
     while (!WindowShouldClose()) {
         game.physics.space.step(1.0f / 60.0f);
@@ -59,14 +69,17 @@ int main()
         // draw
         BeginDrawing();
         ClearBackground(WHITE);
+		camera.offset = playerBody.position();
         BeginMode2D(camera);
+
+        Rect(cpShapeGetBB(&playerShape.shape)).draw(RED);
+
         EndMode2D();
         EndDrawing();
     }
 
     CloseWindow();
 
-    game.physics.bodies.forEach([](auto item) { cpBodyDestroy(&item.self); });
     cpSpaceDestroy(&game.physics.space);
     game.meshes.forEach([](auto item) { UnloadMesh(item.self); });
 
