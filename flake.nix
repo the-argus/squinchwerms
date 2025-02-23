@@ -26,6 +26,9 @@
         {
           packages =
             (with pkgs; [
+              (writeShellScriptBin "build" "zig build -Dcpu=baseline")
+              (writeShellScriptBin "run" "build && gdb zig-out/bin/squinchwerms")
+              (writeShellScriptBin "frun" "build && zig build run -Dcpu=baseline")
               gdb
               valgrind
               pkg-config
