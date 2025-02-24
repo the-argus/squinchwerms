@@ -93,7 +93,7 @@ class PolyShape : public ::cpPolyShape
     [[nodiscard]] int count() const;
     [[nodiscard]] float radius() const;
     [[nodiscard]] Vect vertex(int index) const;
-    constexpr Shape &parentCast() { return *static_cast<Shape *>(&shape); }
+    constexpr Shape &asShape() { return *static_cast<Shape *>(&shape); }
 };
 
 class SegmentShape : public ::cpSegmentShape
@@ -114,8 +114,8 @@ class SegmentShape : public ::cpSegmentShape
     [[nodiscard]] Vect b() const;
     [[nodiscard]] Vect normal() const;
 
-    SegmentShape& setNeighbors(Vect prev, Vect next);
-    constexpr Shape *parentCast() { return static_cast<Shape *>(&shape); }
+    SegmentShape &setNeighbors(Vect prev, Vect next);
+    constexpr Shape *asShape() { return static_cast<Shape *>(&shape); }
 };
 
 } // namespace lib

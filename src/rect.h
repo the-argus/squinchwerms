@@ -1,6 +1,7 @@
 #pragma once
 #include "vect.h"
 #include <chipmunk/cpBB.h>
+#include <fmt/core.h>
 #include <okay/short_arithmetic_types.h>
 #include <raylib.h>
 
@@ -92,3 +93,22 @@ struct Rect : public ::Rectangle
     }
 };
 } // namespace lib
+
+template <> struct fmt::formatter<lib::Rect>
+{
+    constexpr format_parse_context::iterator parse(format_parse_context &ctx)
+    {
+        auto it = ctx.begin();
+        if (it != ctx.end() && *it != '}')
+            throw_format_error("invalid format");
+        return it;
+    }
+
+    format_context::iterator format(const lib::Rect &r,
+                                    format_context &ctx) const
+    {
+        return fmt::format_to(
+            ctx.out(), "{{ .x = {}, .y = {}, .width = {}, .height = {} }}", r.x,
+            r.y, r.width, r.height);
+    }
+};

@@ -2,6 +2,7 @@
 
 #include <chipmunk/chipmunk_types.h>
 #include <chipmunk/cpVect.h>
+#include <fmt/core.h>
 #include <raylib.h>
 
 namespace lib {
@@ -110,3 +111,20 @@ struct Vect : public ::Vector2
     }
 };
 } // namespace lib
+
+template <> struct fmt::formatter<lib::Vect>
+{
+    constexpr format_parse_context::iterator parse(format_parse_context &ctx)
+    {
+        auto it = ctx.begin();
+        if (it != ctx.end() && *it != '}')
+            throw_format_error("invalid format");
+        return it;
+    }
+
+    format_context::iterator format(const lib::Vect &v,
+                                    format_context &ctx) const
+    {
+        return fmt::format_to(ctx.out(), "({} {})", v.x, v.y);
+    }
+};

@@ -10,11 +10,10 @@
 #include <raylib.h>
 
 using namespace lib;
+using fmt::println;
 
 constexpr Vect render_size = {800, 600};
 constexpr size_t fps = 60;
-
-static Camera2D camera;
 
 int main()
 {
@@ -22,12 +21,6 @@ int main()
     ln::init();
     InitWindow(render_size.x, render_size.y, "Squinchwerms");
     SetTargetFPS(fps);
-
-    camera = {
-        .offset = render_size / 2,
-        .target = {0, 0},
-        .zoom = 1,
-    };
 
     ok::c_allocator_t backing;
     ok::arena_t levelArena(
@@ -54,25 +47,31 @@ int main()
                                     .moment = 0.1f,
                                 })
                                 .release();
+    constexpr auto square = Rect::unitSquare().scaledBy(100.f).at({50.f, 50.f});
     lib::PolyShape &playerShape =
         game.physics.polyShapes
-            .make(playerBody,
-                  lib::PolyShape::SquareOptions{
-                      Rect::unitSquare().at({0, 0}).scaledBy(1.f)})
+            .make(playerBody, lib::PolyShape::SquareOptions{square})
             .release();
 
     game.physics.space.add(playerBody);
 
     while (!WindowShouldClose()) {
-        game.physics.space.step(1.0f / 60.0f);
+        // game.physics.space.step(1.0f / 60.0f);
 
         // draw
         BeginDrawing();
         ClearBackground(WHITE);
-		camera.offset = playerBody.position();
-        BeginMode2D(camera);
 
-        Rect(cpShapeGetBB(&playerShape.shape)).draw(RED);
+        println("{}", playerBody.position());
+        println("{}", playerShape.asShape().getBoundingBox());
+        BeginMode2D(Camera2D{
+            .offset = render_size / 2,
+            .target = playerBody.position(),
+            .zoom = 1,
+        });
+
+        DrawRectanglePro(playerShape.asShape().getBoundingBox(),
+                         playerBody.position(), 0.f, RED);
 
         EndMode2D();
         EndDrawing();
