@@ -4,10 +4,12 @@
 #include "natural_log/natural_log.h"
 #include "vect.h"
 #include <cstddef>
+#include <imgui.h>
 #include <okay/allocators/arena.h>
 #include <okay/allocators/c_allocator.h>
 #include <okay/short_arithmetic_types.h>
 #include <raylib.h>
+#include <rlImGui.h>
 
 using namespace lib;
 using fmt::println;
@@ -15,12 +17,22 @@ using fmt::println;
 constexpr Vect render_size = {800, 600};
 constexpr size_t fps = 60;
 
+enum class MenuAction
+{
+    EnterGame,
+    None,
+    ExitGame,
+};
+
+static MenuAction runMainMenu() noexcept;
+
 int main()
 {
     using namespace werm;
     ln::init();
     InitWindow(render_size.x, render_size.y, "Squinchwerms");
     SetTargetFPS(fps);
+    rlImGuiSetup(true);
 
     ok::c_allocator_t backing;
     ok::arena_t levelArena(
@@ -55,27 +67,58 @@ int main()
 
     game.physics.space.add(playerBody);
 
-    while (!WindowShouldClose()) {
-        // game.physics.space.step(1.0f / 60.0f);
+    bool inGame = false;
+    bool exitWindow = false;
+
+    Camera2D camera = {
+        .offset = render_size / 2,
+        .target = lib::Vect::zero(),
+        .zoom = 1.f,
+    };
+
+    while (!WindowShouldClose() && !exitWindow) {
+        if (inGame) {
+            game.physics.space.step(1.0f / 60.0f);
+        }
 
         // draw
         BeginDrawing();
-        ClearBackground(WHITE);
 
-        println("{}", playerBody.position());
-        println("{}", playerShape.asShape().getBoundingBox());
-        BeginMode2D(Camera2D{
-            .offset = render_size / 2,
-            .target = playerBody.position(),
-            .zoom = 1,
-        });
+        if (inGame) {
+            ClearBackground(WHITE);
 
-        DrawRectanglePro(playerShape.asShape().getBoundingBox(),
-                         playerBody.position(), 0.f, RED);
+            // println("{}", playerBody.position());
+            // println("{}", playerShape.asShape().getBoundingBox());
+            BeginMode2D(camera);
 
-        EndMode2D();
+            if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
+                Vect delta = GetMouseDelta();
+                camera.target = Vect(camera.target) + delta.negative();
+            }
+
+            DrawRectangle(0, 0, 50, 50, BLACK);
+
+            DrawRectanglePro(playerShape.asShape().getBoundingBox(),
+                             playerBody.position(), 0.f, RED);
+
+            EndMode2D();
+        } else {
+            switch (runMainMenu()) {
+            case MenuAction::None:
+                break;
+            case MenuAction::ExitGame:
+                exitWindow = true;
+                break;
+            case MenuAction::EnterGame:
+                inGame = true;
+                break;
+            }
+        }
+
         EndDrawing();
     }
+
+    rlImGuiShutdown();
 
     CloseWindow();
 
@@ -85,4 +128,31 @@ int main()
     levelArena.destroy();
 
     return 0;
+}
+
+static MenuAction runMainMenu() noexcept
+{
+    ClearBackground(WHITE);
+    rlImGuiBegin();
+
+    auto action = MenuAction::None;
+    auto noOtherButtonsPressed = [&] { return action == MenuAction::None; };
+
+    using namespace ImGui;
+
+    BeginGroup();
+    {
+        if (Button("Squinch")) {
+            action = MenuAction::EnterGame;
+        }
+
+        if (Button("Exit Game") && noOtherButtonsPressed()) {
+            action = MenuAction::ExitGame;
+        }
+    }
+    EndGroup();
+
+    rlImGuiEnd();
+
+    return action;
 }
