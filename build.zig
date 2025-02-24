@@ -41,11 +41,15 @@ pub fn build(b: *std.Build) !void {
     const okaylib = b.dependency("okaylib", .{ .target = target, .optimize = optimize });
     const raylib = b.dependency("raylib", .{ .target = target, .optimize = optimize, .linux_display_backend = .X11 });
     const chipmunk = b.dependency("chipmunk2d", .{ .target = target, .optimize = optimize, .use_doubles = false });
+    const fastnoiselite = b.dependency("fastnoiselite", .{ .target = target, .optimize = optimize });
 
     // TODO: okaylib should propagate this to us but its not working, manually including it
     const fmt = b.dependency("fmt", .{});
     const fmt_include_path = b.pathJoin(&.{ fmt.builder.install_path, "include" });
     try flags.append(b.fmt("-I{s}", .{fmt_include_path}));
+
+    // add include flag for compile_commands.json
+    try flags.append(b.fmt("-I{s}", .{b.pathJoin(&.{ fastnoiselite.builder.install_path, "include" })})); // just for compile commands to work properly?
 
     const final_flags = try flags.toOwnedSlice();
 
@@ -64,9 +68,11 @@ pub fn build(b: *std.Build) !void {
     // link libraries
     exe.step.dependOn(okaylib.builder.getInstallStep());
     exe.step.dependOn(fmt.builder.getInstallStep());
+    exe.step.dependOn(fastnoiselite.builder.getInstallStep()); // just for compile commands working properly?
     exe.addIncludePath(okaylib.builder.path("include/"));
     exe.linkLibCpp();
     exe.linkLibrary(raylib.artifact("raylib"));
+    exe.linkLibrary(fastnoiselite.artifact("FastNoiseLite"));
     exe.linkLibrary(chipmunk.artifact("chipmunk"));
     // raylib's include paths are wrong, they include the headers directly with -I/path/to/include/header.h instead of -I/path/to/include
     exe.addIncludePath(raylib.builder.path("src/"));

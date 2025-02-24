@@ -16,6 +16,11 @@
             .hash = "122024de2f9b35fbaa3a8503f5681b08c77b0db1190e6dbeb7d8b39fc8e06aaa7af6",
             // .hash = "1220aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
         },
+        .fastnoiselite = .{
+            .url = "https://github.com/the-argus/FastNoiseLite-zig/archive/8d4ada0c8c78b8cc197af287a12e64be17b39696.tar.gz",
+            .hash = "1220b0c0971f52161b455c33c0b3a3e4335ce97a82ef92918e1852684f85f38d9c96",
+            // .hash = "1220aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        },
         .fmt = .{
             .url = "https://github.com/the-argus/fmt/archive/d5ad6ce7ab711d601ffbf0706740279617b43325.tar.gz",
             .hash = "1220727ae90b421da0d3e09aa9449a55eff672fdab47f62dd661dc1b5634ea78b56a",
