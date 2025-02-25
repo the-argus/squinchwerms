@@ -3,6 +3,7 @@
 #include "vect.h"
 #include <chipmunk/chipmunk.h>
 #include <chipmunk/chipmunk_structs.h>
+#include <okay/short_arithmetic_types.h>
 #include <okay/slice.h>
 
 namespace lib {
@@ -13,6 +14,13 @@ class Space;
 class Shape : public ::cpShape
 {
   public:
+    enum class Type : u8
+    {
+        Poly = ::CP_POLY_SHAPE, // 2
+        Segment = ::CP_SEGMENT_SHAPE, // 1
+        SHAPE_TYPE_MAX,
+    };
+
     // youre not inteded to make one of these, its abstract
     Shape() = delete;
 
@@ -90,6 +98,8 @@ class PolyShape : public ::cpPolyShape
 
     PolyShape(Body &body, const SquareOptions &options);
 
+    explicit constexpr PolyShape(zeroed_tag) noexcept : ::cpPolyShape({}) {}
+
     [[nodiscard]] int count() const;
     [[nodiscard]] float radius() const;
     [[nodiscard]] Vect vertex(int index) const;
@@ -109,6 +119,10 @@ class SegmentShape : public ::cpSegmentShape
     };
 
     SegmentShape(Body &body, const Options &options) noexcept;
+
+    explicit constexpr SegmentShape(zeroed_tag) noexcept : ::cpSegmentShape({})
+    {
+    }
 
     [[nodiscard]] Vect a() const;
     [[nodiscard]] Vect b() const;

@@ -6,6 +6,9 @@
 #include <raylib.h>
 
 namespace lib {
+struct zeroed_tag
+{};
+
 struct Vect : public ::Vector2
 {
     constexpr Vect(Vector2 rl) noexcept : Vector2(rl) {}
@@ -47,6 +50,12 @@ struct Vect : public ::Vector2
     Vect &scaleThis(float scale) noexcept;
     Vect &roundThis() noexcept;
     Vect &truncateThis() noexcept;
+
+    constexpr bool isRoughlyEquals(const Vect &other) const noexcept
+    {
+        auto out = (other - *this);
+        return fabsf(out.x) < 0.001 && fabsf(out.y) < 0.001;
+    }
 
     constexpr bool operator==(const Vect &other) const noexcept
     {

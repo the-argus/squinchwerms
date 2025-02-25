@@ -2,6 +2,7 @@
 #include "body.h"
 #include "shape.h"
 #include "vect.h"
+#include "json/json_space.h"
 #include <chipmunk/chipmunk_structs.h>
 #include <cstring>
 
@@ -9,12 +10,17 @@ namespace lib {
 class Space : public ::cpSpace
 {
   public:
+    friend bool
+    lib::deserializeSpace(Space &uninitialized, const char *filepath,
+                          const PhysicsAllocators &allocators) noexcept;
+
     constexpr Space() noexcept : ::cpSpace({})
     {
         std::memset(static_cast<cpSpace *>(this), 0, sizeof(cpSpace));
         void *res = cpSpaceInit(this);
         assert(res);
     }
+    explicit constexpr Space(zeroed_tag) noexcept : cpSpace({}) {}
 
     constexpr void destroy() noexcept { cpSpaceDestroy(this); }
 

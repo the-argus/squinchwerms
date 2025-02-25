@@ -12,7 +12,9 @@ template <typename T> struct LinkedPool
 {
     // this pool expects to be wiped by an allocator clear and doesnt do
     // destruction
-    static_assert(std::is_trivially_destructible_v<T>);
+    static_assert(
+        std::is_trivially_destructible_v<T>,
+        "refusing to put a non trivially destructible type in a LinkedPool");
 
     struct Item
     {
@@ -37,7 +39,9 @@ template <typename T> struct LinkedPool
     [[nodiscard]] constexpr ok::alloc::result_t<T &>
     make(Args &&...args) noexcept
     {
-        static_assert(ok::is_std_constructible_v<T, Args...>);
+        static_assert(
+            ok::is_std_constructible_v<T, Args...>,
+            "Cannot construct the type in the LinkedPool with the given args");
         constexpr auto freePredicate = [](Item &i) { return i.free; };
         FindResult findResult = find(freePredicate);
         if (!findResult.found) {
@@ -117,7 +121,8 @@ template <typename T> struct LinkedPool
     find(const callable_t &predicate) noexcept
     {
         static_assert(
-            ok::is_std_invocable_r_v<bool, const callable_t &, Item &>);
+            ok::is_std_invocable_r_v<bool, const callable_t &, Item &>,
+            "invalid callable given to LinkedPool::find");
         FindResult out;
         auto item = head;
         while (item) {

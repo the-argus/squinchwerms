@@ -1,8 +1,10 @@
 #include <raylib.h>
 
+#include "debug_draw.h"
 #include "game.h"
 #include "natural_log/natural_log.h"
 #include "vect.h"
+#include "json/json_space.h"
 #include <cstddef>
 #include <imgui.h>
 #include <okay/allocators/arena.h>
@@ -39,7 +41,7 @@ int main()
         backing.allocate({.num_bytes = 1024 * 1024}).release().as_bytes(),
         backing);
 
-    Game game{
+    static Game game{
         .backingHeapAllocator = backing,
         .levelArena = levelArena,
         .meshes = {.backingAllocator = levelArena},
@@ -48,9 +50,34 @@ int main()
                 .bodies = {.backingAllocator = levelArena},
                 .polyShapes = {.backingAllocator = levelArena},
                 .segmentShapes = {.backingAllocator = levelArena},
-                .space = lib::Space{},
+                .space = lib::Space{lib::zeroed_tag{}},
             },
     };
+
+    bool good = deserializeSpace(
+        game.physics.space, "example.sqw",
+        lib::PhysicsAllocators{
+            .bodyAllocator =
+                [] {
+                    return &game.physics.bodies.make(lib::zeroed_tag{})
+                                .release();
+                },
+            .polyShapeAllocator =
+                [] {
+                    return &game.physics.polyShapes.make(lib::zeroed_tag{})
+                                .release();
+                },
+            .segmentShapeAllocator =
+                [] {
+                    return &game.physics.segmentShapes.make(lib::zeroed_tag{})
+                                .release();
+                },
+            .vertexBufScratch = backing,
+        });
+
+    if (!good) {
+        exit(1);
+    }
 
     lib::Body &playerBody = game.physics.bodies
                                 .make(lib::Body::BodyOptions{
@@ -67,6 +94,8 @@ int main()
 
     game.physics.space.add(playerBody);
 
+	game.physics.space.setGravity({0, -10.f});
+
     bool inGame = false;
     bool exitWindow = false;
 
@@ -76,9 +105,19 @@ int main()
         .zoom = 1.f,
     };
 
+	Material def = LoadMaterialDefault();
+
     while (!WindowShouldClose() && !exitWindow) {
         if (inGame) {
             game.physics.space.step(1.0f / 60.0f);
+
+            if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
+                Vect delta = GetMouseDelta();
+                camera.target = Vect(camera.target) + delta.negative() / camera.zoom;
+            }
+
+			camera.zoom += GetMouseWheelMove() * 0.1f;
+			camera.zoom = ok::partial_clamp(camera.zoom, 0.1f, 3.f);
         }
 
         // draw
@@ -91,15 +130,12 @@ int main()
             // println("{}", playerShape.asShape().getBoundingBox());
             BeginMode2D(camera);
 
-            if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
-                Vect delta = GetMouseDelta();
-                camera.target = Vect(camera.target) + delta.negative();
-            }
-
             DrawRectangle(0, 0, 50, 50, BLACK);
 
             DrawRectanglePro(playerShape.asShape().getBoundingBox(),
                              playerBody.position(), 0.f, RED);
+
+            debugDrawPhysics(game.physics.space, def);
 
             EndMode2D();
         } else {

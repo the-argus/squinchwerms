@@ -53,7 +53,7 @@ void Shape::setCollisionType(cpCollisionType type)
     cpShapeSetCollisionType(this, type);
 }
 
-void Shape::free() { cpShapeFree(this); }
+void Shape::free() { cpShapeDestroy(this); }
 
 Body &Shape::body() { return *static_cast<Body *>(cpShapeGetBody(this)); }
 

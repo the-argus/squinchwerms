@@ -75,6 +75,16 @@ struct Rect : public ::Rectangle
                (fabsf(height - other.height) < tol);
     }
 
+    [[nodiscard]] constexpr Vect max() const noexcept
+    {
+        return ::Vector2{.x = x + width, .y = y + height};
+    }
+
+    [[nodiscard]] constexpr Vect min() const noexcept
+    {
+        return ::Vector2{.x = x, .y = y};
+    }
+
     constexpr void draw(::Color color) const noexcept
     {
         ::DrawRectangleRec(*this, color);

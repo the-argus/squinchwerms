@@ -2,16 +2,18 @@
 #include "shape.h"
 #include "vect.h"
 #include <cstring>
+#include <okay/short_arithmetic_types.h>
 
 namespace lib {
 class Body : public ::cpBody
 {
   public:
-    enum class Type : uint8_t
+    enum class Type : u8
     {
-        DYNAMIC = ::CP_BODY_TYPE_DYNAMIC,
-        KINEMATIC = ::CP_BODY_TYPE_KINEMATIC,
-        STATIC = ::CP_BODY_TYPE_STATIC,
+        DYNAMIC = ::CP_BODY_TYPE_DYNAMIC, // 0
+        KINEMATIC = ::CP_BODY_TYPE_KINEMATIC, // 1
+        STATIC = ::CP_BODY_TYPE_STATIC, // 2
+        TYPE_MAX,
     };
     Body() = delete;
 
@@ -21,6 +23,8 @@ class Body : public ::cpBody
         float mass;
         float moment;
     };
+
+    explicit constexpr Body(zeroed_tag) noexcept : ::cpBody({}) {}
 
     constexpr Body(const BodyOptions &options)
     {
@@ -40,6 +44,9 @@ class Body : public ::cpBody
         case Type::KINEMATIC:
             m = INFINITY;
             break;
+        default:
+            assert(false);
+            __builtin_unreachable();
         }
         cpBodySetType(this, cpBodyType(options.type));
         cpBodyInit(this, options.mass, options.moment);

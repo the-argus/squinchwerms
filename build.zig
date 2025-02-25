@@ -20,6 +20,9 @@ const universal_flags = &[_][]const u8{
     "-I./vendor/rlImGui/",
     // for rlimgui
     "-DNO_FONT_AWESOME",
+
+    // vendor rapidjson
+    "-I./vendor/rapidjson/include/",
 };
 
 const cpp_sources = &[_][]const u8{
@@ -30,6 +33,9 @@ const cpp_sources = &[_][]const u8{
     // "src/terrain.cpp",
     "src/vect.cpp",
     "src/natural_log/natural_log.cpp",
+    "src/json/json_space.cpp",
+    "src/debug_draw.cpp",
+    "src/tesselator.cpp",
 };
 
 pub fn build(b: *std.Build) !void {
