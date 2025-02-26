@@ -29,6 +29,7 @@
               (writeShellScriptBin "build" "zig build -Dcpu=baseline")
               (writeShellScriptBin "run" "build && gdb zig-out/bin/squinchwerms")
               (writeShellScriptBin "frun" "build && zig build run -Dcpu=baseline")
+              (writeShellScriptBin "rd" "build && renderdoccmd capture -d . -c ./capture ./zig-out/bin/squinchwerms")
               gdb
               valgrind
               pkg-config
