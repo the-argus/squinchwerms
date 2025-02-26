@@ -5,6 +5,7 @@
 #include "space.h"
 #include "tesselator.h"
 #include "vect.h"
+#include <array>
 #include <okay/short_arithmetic_types.h>
 #include <raylib.h>
 using namespace lib;
@@ -30,6 +31,7 @@ Mesh *lib::genMeshFromVertices(ok::slice_t<const cpVect> vertSlice,
 
     Mesh *out = (Mesh *)malloc(sizeof(Mesh));
     *out = Mesh{
+        .vertexCount = int(positions.size()),
         .triangleCount = int(triangles.size()),
         .vertices = (float *)malloc(sizeof(Vector3) * positions.size()),
         .texcoords = (float *)calloc(positions.size(), sizeof(Vector2)),
@@ -72,11 +74,13 @@ static void debugDrawPolyShape(cpPolyShape *polyShape,
     DrawMesh(*mesh, material, MatrixTranslate(pos.x, pos.y, 0));
 
     for (u64 i = 0; i < mesh->triangleCount; ++i) {
-        auto *triStart = (Vector3 *)mesh->vertices + (i * 3 * 3);
-        Vect v1 = {triStart[0].x + pos.x, triStart[0].y + pos.y};
-        Vect v2 = {triStart[1].x + pos.x, triStart[1].y + pos.y};
-        Vect v3 = {triStart[2].x + pos.x, triStart[2].y + pos.y};
-        DrawTriangle(v1, v2, v3, RED);
+        auto &indexStart = *(std::array<u16, 3> *)(mesh->indices + (i * 3 *
+        3)); Vector3 *p1 = (Vector3 *)(mesh->vertices + (indexStart[0] * 3));
+        Vector3 *p2 = (Vector3 *)(mesh->vertices + (indexStart[1] * 3));
+        Vector3 *p3 = (Vector3 *)(mesh->vertices + (indexStart[2] * 3));
+        DrawTriangle({p1->x + pos.x, p1->y + pos.y},
+                     {p2->x + pos.x, p2->y + pos.y},
+                     {p3->x + pos.x, p3->y + pos.y}, RED);
     }
 }
 

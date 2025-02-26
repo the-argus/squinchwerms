@@ -1,3 +1,4 @@
+*.rdc
 imgui.ini
 build/
 .vs/

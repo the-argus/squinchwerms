@@ -35,6 +35,7 @@
               libGL
               cmake
               zig_0_13
+			  renderdoc
             ])
             ++ (with pkgs.xorg; [
               libX11

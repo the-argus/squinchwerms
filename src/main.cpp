@@ -14,7 +14,6 @@
 #include <rlImGui.h>
 
 using namespace lib;
-using fmt::println;
 
 constexpr Vect render_size = {800, 600};
 constexpr size_t fps = 60;
@@ -94,7 +93,7 @@ int main()
 
     game.physics.space.add(playerBody);
 
-	game.physics.space.setGravity({0, -10.f});
+    game.physics.space.setGravity({0, -10.f});
 
     bool inGame = false;
     bool exitWindow = false;
@@ -105,7 +104,8 @@ int main()
         .zoom = 1.f,
     };
 
-	Material def = LoadMaterialDefault();
+    Material def = LoadMaterialDefault();
+	def.maps[MATERIAL_MAP_DIFFUSE].color = BLUE;
 
     while (!WindowShouldClose() && !exitWindow) {
         if (inGame) {
@@ -113,11 +113,12 @@ int main()
 
             if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
                 Vect delta = GetMouseDelta();
-                camera.target = Vect(camera.target) + delta.negative() / camera.zoom;
+                camera.target =
+                    Vect(camera.target) + delta.negative() / camera.zoom;
             }
 
-			camera.zoom += GetMouseWheelMove() * 0.1f;
-			camera.zoom = ok::partial_clamp(camera.zoom, 0.1f, 3.f);
+            camera.zoom += GetMouseWheelMove() * 0.1f;
+            camera.zoom = ok::partial_clamp(camera.zoom, 0.1f, 3.f);
         }
 
         // draw
@@ -126,14 +127,13 @@ int main()
         if (inGame) {
             ClearBackground(WHITE);
 
+            EndMode3D();
+
             // println("{}", playerBody.position());
             // println("{}", playerShape.asShape().getBoundingBox());
             BeginMode2D(camera);
 
             DrawRectangle(0, 0, 50, 50, BLACK);
-
-            DrawRectanglePro(playerShape.asShape().getBoundingBox(),
-                             playerBody.position(), 0.f, RED);
 
             debugDrawPhysics(game.physics.space, def);
 
