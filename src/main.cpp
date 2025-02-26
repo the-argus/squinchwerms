@@ -105,7 +105,11 @@ int main()
     };
 
     Material def = LoadMaterialDefault();
-	def.maps[MATERIAL_MAP_DIFFUSE].color = BLUE;
+    def.maps[MATERIAL_MAP_DIFFUSE].color = BLUE;
+    def.maps[MATERIAL_MAP_DIFFUSE].texture =
+        LoadTexture("assets/terrain_textures/dirt_00.png");
+    def.shader = LoadShader("assets/shaders/passthrough.vert",
+                            "assets/shaders/biplanar_mapping.frag");
 
     while (!WindowShouldClose() && !exitWindow) {
         if (inGame) {
@@ -157,6 +161,9 @@ int main()
     rlImGuiShutdown();
 
     CloseWindow();
+
+    UnloadShader(def.shader);
+    UnloadTexture(def.maps[MATERIAL_MAP_DIFFUSE].texture);
 
     cpSpaceDestroy(&game.physics.space);
     game.meshes.forEach([](auto item) { UnloadMesh(item.self); });

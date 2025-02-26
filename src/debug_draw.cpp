@@ -73,15 +73,15 @@ static void debugDrawPolyShape(cpPolyShape *polyShape,
     auto pos = cpBodyGetPosition(polyShape->shape.body);
     DrawMesh(*mesh, material, MatrixTranslate(pos.x, pos.y, 0));
 
-    for (u64 i = 0; i < mesh->triangleCount; ++i) {
-        auto &indexStart = *(std::array<u16, 3> *)(mesh->indices + (i * 3 *
-        3)); Vector3 *p1 = (Vector3 *)(mesh->vertices + (indexStart[0] * 3));
-        Vector3 *p2 = (Vector3 *)(mesh->vertices + (indexStart[1] * 3));
-        Vector3 *p3 = (Vector3 *)(mesh->vertices + (indexStart[2] * 3));
-        DrawTriangle({p1->x + pos.x, p1->y + pos.y},
-                     {p2->x + pos.x, p2->y + pos.y},
-                     {p3->x + pos.x, p3->y + pos.y}, RED);
-    }
+    // for (u64 i = 0; i < mesh->triangleCount; ++i) {
+    //     auto &indexStart = *(std::array<u16, 3> *)(mesh->indices + (i * 3 *
+    //     3)); Vector3 *p1 = (Vector3 *)(mesh->vertices + (indexStart[0] * 3));
+    //     Vector3 *p2 = (Vector3 *)(mesh->vertices + (indexStart[1] * 3));
+    //     Vector3 *p3 = (Vector3 *)(mesh->vertices + (indexStart[2] * 3));
+    //     DrawTriangle({p1->x + pos.x, p1->y + pos.y},
+    //                  {p2->x + pos.x, p2->y + pos.y},
+    //                  {p3->x + pos.x, p3->y + pos.y}, RED);
+    // }
 }
 
 void lib::debugDrawPhysics(lib::Space &space, Material polygonMaterial) noexcept
