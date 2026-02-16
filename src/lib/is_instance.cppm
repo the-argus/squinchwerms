@@ -1,0 +1,18 @@
+module;
+
+#include <type_traits>
+
+export module is_instance;
+
+export namespace lib {
+template <class, template <typename...> typename>
+struct is_instance : public std::false_type
+{};
+
+template <class... Y, template <typename...> typename U>
+struct is_instance<U<Y...>, U> : public std::true_type
+{};
+
+template <typename T, template <typename...> typename temp>
+concept is_instance_c = is_instance<std::remove_cv_t<T>, temp>::value;
+}

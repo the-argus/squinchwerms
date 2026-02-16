@@ -3,15 +3,17 @@ cmake_minimum_required(VERSION 3.28)
 project(squinchwerms)
 
 find_program(MOLD_PROGRAM mold)
-if (MOLD_PROGRAM)
-    set(CMAKE_LINKER_TYPE MOLD)
-    message(STATUS "mold found: ${MOLD_PROGRAM}")
-endif ()
+if(MOLD_PROGRAM)
+  set(CMAKE_LINKER_TYPE MOLD)
+  message(STATUS "mold found: ${MOLD_PROGRAM}")
+endif()
 
-set(hotreloaded_source_files
-	# src/tesselator.cppm
-	src/aliases.cppm
-)
+set(hotreloaded_source_files # src/tesselator.cppm
+    src/aliases.cppm
+    # src/allocators/allocator.cppm src/allocators/arena.cppm
+    src/lib/opt.cppm
+    src/lib/uninitialized_storage.cppm
+    src/lib/is_instance.cppm)
 set(werms_include_dirs src/)
 
 # the game may run `cmake --build ${BUILD_DIR} --target ${PROJECT_NAME}_lib` in
@@ -28,12 +30,22 @@ endif()
 target_sources(${PROJECT_NAME}_lib PUBLIC FILE_SET CXX_MODULES FILES
                                           ${hotreloaded_source_files})
 
-if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  target_compile_options(${PROJECT_NAME} PRIVATE -fmodules)
-endif()
+set_target_properties(
+  ${PROJECT_NAME}
+  PROPERTIES CXX_STANDARD_REQUIRED ON
+             CXX_STANDARD 23
+             CXX_EXTENSIONS OFF
+             CXX_SCAN_FOR_MODULES ON
+             CXX_MODULE_STD OFF)
+set_target_properties(
+  ${PROJECT_NAME}_lib
+  PROPERTIES CXX_STANDARD_REQUIRED ON
+             CXX_STANDARD 23
+             CXX_EXTENSIONS OFF
+             CXX_SCAN_FOR_MODULES ON
+             CXX_MODULE_STD OFF)
 
-set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 23)
-set_property(TARGET ${PROJECT_NAME}_lib PROPERTY CXX_STANDARD 23)
+target_include_directories(${PROJECT_NAME}_lib PRIVATE ${werms_include_dirs})
 
 find_package(box2d REQUIRED)
 find_package(SDL3 REQUIRED)
@@ -41,5 +53,8 @@ find_package(Vulkan REQUIRED)
 find_package(glaze REQUIRED)
 find_package(imgui REQUIRED)
 
-target_link_libraries(${PROJECT_NAME} SDL3::SDL3 imgui) # main needs SDL and imgui, it defines entrypoints and renderer impl
-target_link_libraries(${PROJECT_NAME}_lib box2d::box2d SDL3::SDL3 Vulkan::Vulkan glaze::glaze imgui)
+target_link_libraries(
+  ${PROJECT_NAME} SDL3::SDL3 imgui) # main needs SDL and imgui, it defines
+                                    # entrypoints and renderer impl
+target_link_libraries(${PROJECT_NAME}_lib box2d::box2d SDL3::SDL3
+                      Vulkan::Vulkan glaze::glaze imgui)
