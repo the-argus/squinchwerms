@@ -1,9 +1,11 @@
 module;
 
 #include "macros.h"
+#include <coroutine>
 #include <memory> // for std::construct_at
 #include <type_traits>
 #include <utility>
+#include <cmath>
 
 export module opt;
 
@@ -321,8 +323,101 @@ class Opt<T>
             return false;
         return this->m_value.value == other;
     }
+
+    struct Promise;
+
+    using handle_type = std::coroutine_handle<Promise>;
+	using promise_type = Promise;
+
+    template <typename InnerT> struct OptAwaiter
+    {
+        lib::Opt<InnerT> payload;
+
+        constexpr bool await_ready() const NOEXCEPT
+        {
+            return payload.hasValue();
+        }
+
+        constexpr void await_suspend(handle_type handle) NOEXCEPT
+        {
+            handle.destroy();
+        }
+
+        constexpr InnerT await_resume() const NOEXCEPT
+            requires std::is_reference_v<InnerT>
+        {
+            static_assert(
+                !std::is_rvalue_reference_v<InnerT>,
+                "opt coroutine depends on Opt<T&&> not being allowed");
+            w_assert(payload.hasValue(), "");
+            return *payload;
+        }
+
+        constexpr InnerT await_resume() const &NOEXCEPT
+            requires(not std::is_reference_v<InnerT>)
+        {
+            w_assert(payload.hasValue(), "");
+            return *payload;
+        }
+
+        constexpr InnerT await_resume() && NOEXCEPT
+                requires(not std::is_reference_v<InnerT>)
+        {
+            w_assert(payload.hasValue(), "");
+            return std::move(*payload);
+        }
+    };
+
+    struct Promise
+    {
+		lib::Opt<T> result;
+
+        // this is called as soon as an Opt-returning function is awaited
+        constexpr Opt<T> get_return_object() NOEXCEPT
+        {
+            return {};
+        }
+
+		template <typename OtherT>
+        constexpr OptAwaiter<OtherT> await_transform(lib::Opt<OtherT> &&other) NOEXCEPT
+        {
+            return OptAwaiter<OtherT>{std::move(other)};
+        }
+
+		template <typename OtherT>
+        constexpr OptAwaiter<OtherT>
+        await_transform(const lib::Opt<OtherT> &other) NOEXCEPT
+        {
+            return OptAwaiter<OtherT>{other};
+        }
+
+        constexpr std::suspend_never initial_suspend() NOEXCEPT { return {}; }
+        constexpr std::suspend_never final_suspend() NOEXCEPT { return {}; }
+        constexpr void unhandled_exception() NOEXCEPT { std::abort(); }
+    };
 };
 } // namespace lib
+
+lib::Opt<i32> floatToInt(f32 f)
+{
+	if (std::isnan(f))
+		return {};
+	if (std::isinf(f))
+		return {};
+	return static_cast<i32>(f);
+}
+
+struct u32s {
+u32 a;
+u32 b;
+};
+
+lib::Opt<u32s> floatsToU32(f32 f1, f32 f2)
+{
+	int i1 = co_await floatToInt(f1);
+	int i2 = co_await floatToInt(f2);
+	co_return u32s{ static_cast<u32>(i1), static_cast<u32>(i2) };
+}
 
 constexpr bool testEqualityAndReset()
 {
