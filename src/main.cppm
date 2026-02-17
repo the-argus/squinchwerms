@@ -1,5 +1,3 @@
-module;
-
 #include <imgui.h>
 #include <imgui_impl_sdl3.h>
 #include <imgui_impl_sdlrenderer3.h>
@@ -10,7 +8,6 @@ module;
 
 #include <cstdint>
 
-export module mainmod;
 import game_lib;
 
 constexpr float render_size[] = {800, 600};
