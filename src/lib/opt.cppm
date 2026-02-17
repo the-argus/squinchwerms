@@ -89,6 +89,10 @@ class Opt<T>
         }
     }
 
+    template <typename U>
+    inline static constexpr bool not_tag =
+        !std::is_same_v<in_place_t, std::remove_cvref_t<U>>;
+
   public:
     template <typename U> friend class Opt;
 
@@ -135,21 +139,13 @@ class Opt<T>
         constructFromOtherOptional(other);
     }
 
-    // convert from something that is not an opt rvalue
-    template <typename Other>
-        requires(!is_instance_c<Other, lib::Opt>)
+    // convert from something that is not an opt rvalue and lvalue
+    template <typename Other = T>
     constexpr Opt(Other &&other) NOEXCEPT
-        requires std::is_convertible_v<decltype(other), T>
-        : m_hasValue(true), m_value(in_place, std::move(other))
-    {
-    }
-
-    // convert from something that is not an opt lvalue
-    template <typename Other>
-        requires(!is_instance_c<Other, lib::Opt>)
-    constexpr Opt(const Other &other) NOEXCEPT
-        requires std::is_convertible_v<decltype(other), T>
-        : m_hasValue(true), m_value(in_place, other)
+        requires(!is_instance_c<Other, lib::Opt> and not_tag<Other> and
+                 std::is_constructible_v<T, decltype(other)> and
+                 std::is_convertible_v<decltype(other), T>)
+        : m_hasValue(true), m_value(in_place, std::forward<Other>(other))
     {
     }
 
@@ -180,16 +176,7 @@ class Opt<T>
     constexpr Opt(OtherT &&other) NOEXCEPT
         requires(std::is_constructible_v<T, decltype(other)> and
                  !std::is_convertible_v<decltype(other), T>)
-        : m_hasValue(true), m_value(in_place, std::move(other))
-    {
-    }
-
-    template <typename OtherT>
-        requires(!is_instance_c<OtherT, lib::Opt>)
-    constexpr Opt(const OtherT &other) NOEXCEPT
-        requires(std::is_constructible_v<T, decltype(other)> and
-                 !std::is_convertible_v<decltype(other), T>)
-        : m_hasValue(true), m_value(in_place, other)
+        : m_hasValue(true), m_value(in_place, std::forward<OtherT>(other))
     {
     }
 
@@ -220,6 +207,7 @@ class Opt<T>
                  !std::is_trivially_copy_assignable_v<T>)
     {
         assignFromOtherOptional(other);
+        m_hasValue = other.hasValue();
         return *this;
     }
 
@@ -231,6 +219,7 @@ class Opt<T>
                                        T>
     {
         assignFromOtherOptional(other);
+        m_hasValue = other.hasValue();
         return *this;
     }
 
@@ -469,11 +458,101 @@ constexpr bool testExplicitConstructors()
     return true;
 }
 
+constexpr bool testCopying()
+{
+    struct Counters
+    {
+        u64 copyConstructs;
+        u64 copyAssigns;
+        u64 destructs;
+    };
+
+    Counters counters{};
+
+    struct CounterType
+    {
+        int i = 0;
+        Counters *counters;
+
+        CounterType() = delete;
+        constexpr CounterType(Counters &counters) : i(), counters(&counters) {}
+        constexpr CounterType(Counters &counters, int value)
+            : i(value), counters(&counters)
+        {
+        }
+
+        constexpr CounterType(const CounterType &t)
+            : i(t.i), counters(t.counters)
+        {
+            counters->copyConstructs++;
+        }
+
+        constexpr CounterType &operator=(const CounterType &t)
+        {
+            i = t.i;
+            counters = t.counters;
+            counters->copyAssigns++;
+            return *this;
+        }
+
+        constexpr CounterType &operator=(CounterType &&) = default;
+        constexpr CounterType(CounterType &&) = default;
+    };
+
+    using namespace lib;
+
+    Opt<CounterType> obj1(in_place, counters, 42);
+
+    w_assert(obj1.hasValue(), "");
+    w_assert(obj1->i == 42, "");
+    w_assert(counters.copyConstructs == 0, "");
+    w_assert(counters.copyAssigns == 0, "");
+
+    Opt<CounterType> obj2 = obj1;
+
+    w_assert(obj1.hasValue(), "");
+    w_assert(obj2.hasValue(), "");
+    w_assert(obj1->i == 42, "");
+    w_assert(obj2->i == 42, "");
+    w_assert(counters.copyConstructs == 1, "");
+    w_assert(counters.copyAssigns == 0, "");
+
+    Opt<CounterType> obj3;
+    obj3 = obj1;
+
+    w_assert(obj3.hasValue(), "");
+    w_assert(obj1.hasValue(), "");
+    w_assert(obj1->i == 42, "");
+    w_assert(obj2->i == 42, "");
+    w_assert(obj3->i == 42, "");
+    // there was nothing inside obj3 so it is constructed, not assigned over
+    w_assert(counters.copyConstructs == 2, "");
+    w_assert(counters.copyAssigns == 0, "");
+
+    obj3->i = 27;
+    obj3 = obj1;
+    w_assert(obj3->i == 42, "");
+
+    w_assert(counters.copyConstructs == 2, "");
+    w_assert(counters.copyAssigns == 1, "");
+
+    Opt<CounterType> obj4(counters);
+    w_assert(obj4->i == 0, "");
+    obj4 = obj3;
+    w_assert(obj4->i == 42, "");
+    w_assert(obj3.hasValue(), "");
+    w_assert(counters.copyConstructs == 2, "");
+    w_assert(counters.copyAssigns == 2, "");
+
+    return true;
+}
+
 static_assert(testEqualityAndReset());
 static_assert(testEmplace());
 static_assert(testDereference());
 static_assert(testConvertingConstructorsAndAssignment());
 static_assert(testExplicitConstructors());
+static_assert(testCopying());
 
 static_assert(std::is_trivially_copy_constructible_v<lib::Opt<i32>>);
 static_assert(std::is_trivially_copy_assignable_v<lib::Opt<i32>>);
