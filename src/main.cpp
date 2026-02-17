@@ -1,3 +1,5 @@
+module;
+
 #include <imgui.h>
 #include <imgui_impl_sdl3.h>
 #include <imgui_impl_sdlrenderer3.h>
@@ -7,6 +9,9 @@
 #include <SDL3/SDL_main.h>
 
 #include <cstdint>
+
+export module mainmod;
+import game_lib;
 
 constexpr float render_size[] = {800, 600};
 constexpr size_t fps = 60;
@@ -249,6 +254,9 @@ void initImGui(float mainScale)
 
 SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[])
 {
+    // first try to load the game library
+
+
     SDL_SetAppMetadata("squinchwerms", "1.0",
                        "the-argus.squinchwerms.entrypoint");
 
