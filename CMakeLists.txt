@@ -11,7 +11,9 @@ endif()
 set(hotreloaded_source_files # src/tesselator.cppm
     src/aliases.cppm
     # src/allocators/allocator.cppm src/allocators/arena.cppm
-    src/lib/opt.cppm
+    # src/lib/opt.cppm
+    # src/lib/res.cppm
+    src/library_entry.cppm
     src/lib/uninitialized_storage.cppm
     src/lib/is_instance.cppm)
 set(werms_include_dirs src/)
@@ -24,7 +26,7 @@ if(CMAKE_BUILD_TYPE MATCHES "Debug")
   add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_lib)
 else()
   # in release mode, _lib and the executable are the same
-  add_executable(${PROJECT_NAME} src/main.cpp ALIAS ${PROJECT_NAME_lib})
+  add_executable(${PROJECT_NAME} src/main.cpp ALIAS ${PROJECT_NAME}_lib)
 endif()
 
 target_sources(${PROJECT_NAME}_lib PUBLIC FILE_SET CXX_MODULES FILES
@@ -53,8 +55,8 @@ find_package(Vulkan REQUIRED)
 find_package(glaze REQUIRED)
 find_package(imgui REQUIRED)
 
-target_link_libraries(
-  ${PROJECT_NAME} SDL3::SDL3 imgui) # main needs SDL and imgui, it defines
-                                    # entrypoints and renderer impl
+# main needs sdl and imgui because those have some static/global initialization
+# that needs to stick around
+target_link_libraries(${PROJECT_NAME} SDL3::SDL3 imgui)
 target_link_libraries(${PROJECT_NAME}_lib box2d::box2d SDL3::SDL3
                       Vulkan::Vulkan glaze::glaze imgui)

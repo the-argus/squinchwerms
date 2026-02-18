@@ -29,18 +29,19 @@ constexpr Null null = {};
 template <typename T> class Opt;
 
 template <typename T>
+concept SimpleType = requires {
+    requires !std::is_constructible_v<T, lib::in_place_t>;
+    requires !std::is_constructible_v<T, lib::Null>;
+    requires std::is_trivially_destructible_v<T>;
+    requires std::is_trivially_move_constructible_v<T>;
+    requires std::is_trivially_move_assignable_v<T>;
+};
+
+template <SimpleType T>
     requires(!std::is_reference_v<T>)
 class Opt<T>
 {
   private:
-    static_assert(!std::is_constructible_v<T, in_place_t>,
-                  "Type in Opt may have an ambiguous constructor.");
-    static_assert(!std::is_constructible_v<T, Null>,
-                  "Type in Opt may have an ambiguous constructor.");
-    static_assert(std::is_trivially_destructible_v<T>);
-    static_assert(std::is_trivially_move_constructible_v<T>);
-    static_assert(std::is_trivially_move_assignable_v<T>);
-
     UninitializedStorage<T> m_value;
     bool m_hasValue = false;
 
@@ -273,21 +274,21 @@ class Opt<T>
 
     constexpr const T *operator->() && = delete;
 
-    constexpr T &operator*() & NOEXCEPT
+    constexpr T &unwrap() & NOEXCEPT
     {
-        w_assert(this->m_hasValue, "attempt to dereference null opt");
+        w_assert(this->m_hasValue, "attempt to unwrap null opt");
         return this->m_value.value;
     }
 
-    constexpr const T &operator*() const &NOEXCEPT
+    constexpr const T &unwrap() const &NOEXCEPT
     {
-        w_assert(this->m_hasValue, "attempt to dereference null opt");
+        w_assert(this->m_hasValue, "attempt to unwrap null opt");
         return this->m_value.value;
     }
 
-    constexpr T &&operator*() && NOEXCEPT
+    constexpr T &&unwrap() && NOEXCEPT
     {
-        w_assert(this->m_hasValue, "attempt to dereference null opt");
+        w_assert(this->m_hasValue, "attempt to unwrap null opt");
         return std::move(this->m_value.value);
     }
 
@@ -322,11 +323,11 @@ constexpr bool testEqualityAndReset()
     i = 12;
     w_assert(i.hasValue(), "");
     w_assert(i == 12, "");
-    w_assert(*i == 12, "");
+    w_assert(i.unwrap() == 12, "");
     w_assert(i == Opt<i32>(12), "");
     w_assert(i == Opt<i64>(12), "");
     w_assert(i != 3, "");
-    w_assert(*i != 3, "");
+    w_assert(i.unwrap() != 3, "");
     w_assert(i != Opt<i32>(3), "");
     w_assert(i != Opt<i64>(3), "");
 
@@ -379,19 +380,19 @@ constexpr bool testDereference()
     };
 
     // rvalue dereference
-    const bool same = *Opt<Foo>(in_place, 1, 0.3f) == Foo{1, 0.3f};
+    const bool same = Opt<Foo>(in_place, 1, 0.3f).unwrap() == Foo{1, 0.3f};
     w_assert(same, "");
 
     Opt<Foo> opt(in_place, 1, 0.3f);
     const auto comparison = Foo{1, 0.3f};
-    Foo &f = *opt;
+    Foo &f = opt.unwrap();
     f.f = 0.4f;
     f.i = 2;
     w_assert(opt->f == 0.4f, "");
-    w_assert(*opt != comparison, "");
+    w_assert(opt.unwrap() != comparison, "");
 
     const Opt<Foo> optConst(in_place, 1, 0.3f);
-    const Foo &f2 = *optConst;
+    const Foo &f2 = optConst.unwrap();
     w_assert(optConst->f == 0.3f, "");
     w_assert(optConst == comparison, "");
 
