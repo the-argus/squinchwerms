@@ -1,21 +1,41 @@
 module;
 
-#include "logging_categories.h"
-#include <SDL3/SDL.h>
+#include "game_lib.h"
 
 export module entry;
+import main_menu;
+import logging;
 
 extern "C"
 {
     // called once at startup, we return the ctx which will be passed on all
     // future calls
-    void *init() { return nullptr; }
+    void *init()
+    {
+        lg::info(lg::Category::Gameplay, "gamelib init() called");
+        return nullptr;
+    }
+
+    void onHotReload(const hotreload::GlobalContext *context)
+    {
+        ImGui::SetCurrentContext(context->imguiContext);
+        ImGui::SetAllocatorFunctions(context->imguiAlloc, context->imguiFree,
+                                     context->imguiAllocUsrData);
+    }
 
     /// Called every frame
     /// return true if continue, false if quit
     bool frame(void *ctx, SDL_Renderer *renderer)
     {
-        // SDL_LogInfo(Category_Renderer, "entered game lib frame() function");
+        switch (runMainMenu()) {
+        case MenuAction::EnterGame:
+            break;
+        case MenuAction::ExitGame:
+            return false;
+        default:
+            break;
+        }
+        // SDL_LogInfo(Renderer, "entered game lib frame() function");
         return true;
     }
 

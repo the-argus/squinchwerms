@@ -10,6 +10,7 @@
 
 #include <chrono>
 #include <filesystem>
+#include <optional>
 
 #include "config.h"
 #include "game_lib.h"
@@ -31,14 +32,6 @@ constexpr Duration recompilationTimeout = std::chrono::seconds(2);
 constexpr float render_size[] = {800, 600};
 constexpr size_t fps = 60;
 
-enum class MenuAction
-{
-    EnterGame,
-    None,
-    ExitGame,
-};
-
-static MenuAction runMainMenu() noexcept;
 [[nodiscard]] static std::optional<std::filesystem::file_time_type>
 getMostRecentModifyTime(const char *sourceRootPath);
 [[nodiscard]] static bool scanForSourceChanges(const char *sourceRootPath,
@@ -192,31 +185,6 @@ getMostRecentModifyTime(const char *sourceRootPath);
 //     return 0;
 // }
 
-static MenuAction runMainMenu() noexcept
-{
-    ImGui::Begin("Main Menu");
-
-    auto action = MenuAction::None;
-    auto noOtherButtonsPressed = [&] { return action == MenuAction::None; };
-
-    using namespace ImGui;
-
-    ImGui::BeginGroup();
-    {
-        if (ImGui::Button("Squinch")) {
-            action = MenuAction::EnterGame;
-        }
-
-        if (ImGui::Button("Exit Game") && noOtherButtonsPressed()) {
-            action = MenuAction::ExitGame;
-        }
-    }
-    ImGui::EndGroup();
-    ImGui::End();
-
-    return action;
-}
-
 static SDL_Window *window = NULL;
 static SDL_Renderer *renderer = NULL;
 
@@ -277,21 +245,18 @@ SDL_AppResult SDL_AppInit(void **appstatePointer, int argc, char *argv[])
     AppState *appstate = new AppState{GameLib(WERMS_HOTRELOADABLE_DLL_PATH)};
     *appstatePointer = appstate;
 
-    if (not appstate->gameLib.firstLoad())
-        return SDL_APP_FAILURE;
-
     SDL_SetAppMetadata("squinchwerms", "1.0", "com.argus.squinchwerms");
 
     if (!SDL_Init(SDL_INIT_VIDEO)) {
-        SDL_LogCritical(Category_Renderer, "Couldn't initialize SDL: %s",
-                        SDL_GetError());
+        SDL_LogCritical(int(LoggingCategory::Renderer),
+                        "Couldn't initialize SDL: %s", SDL_GetError());
         return SDL_APP_FAILURE;
     }
 
     if (!SDL_CreateWindowAndRenderer("Squinchwerms", render_size[0],
                                      render_size[1], SDL_WINDOW_RESIZABLE,
                                      &window, &renderer)) {
-        SDL_LogCritical(Category_Renderer,
+        SDL_LogCritical(int(LoggingCategory::Renderer),
                         "Couldn't create window/renderer: %s", SDL_GetError());
         return SDL_APP_FAILURE;
     }
@@ -300,6 +265,10 @@ SDL_AppResult SDL_AppInit(void **appstatePointer, int argc, char *argv[])
 
     float mainScale = SDL_GetDisplayContentScale(SDL_GetPrimaryDisplay());
     initImGui(mainScale);
+
+    // initialize game last so that ImGui context is also initialized
+    if (not appstate->gameLib.firstLoad())
+        return SDL_APP_FAILURE;
 
     return SDL_APP_CONTINUE;
 }
@@ -311,7 +280,11 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event)
         return SDL_APP_SUCCESS; // end + EXIT_SUCCESS
     }
 
-    static_cast<AppState *>(appstate)->gameLib.event(event);
+    const bool shouldContinue =
+        static_cast<AppState *>(appstate)->gameLib.event(event);
+
+    if (not shouldContinue)
+        return SDL_APP_SUCCESS;
 
     return SDL_APP_CONTINUE;
 }
@@ -327,17 +300,9 @@ SDL_AppResult SDL_AppIterate(void *appstatePointer)
     appstate->reloadIfNeeded();
 
     // start imgui
-    {
-        ImGui_ImplSDLRenderer3_NewFrame();
-        ImGui_ImplSDL3_NewFrame();
-        ImGui::NewFrame();
-    }
-
-    runMainMenu();
-    ImGui::Render();
-    const ImGuiIO &io = ImGui::GetIO();
-    SDL_SetRenderScale(renderer, io.DisplayFramebufferScale.x,
-                       io.DisplayFramebufferScale.y);
+    ImGui_ImplSDLRenderer3_NewFrame();
+    ImGui_ImplSDL3_NewFrame();
+    ImGui::NewFrame();
 
     const double now = ticksToSeconds(SDL_GetTicks());
     const float red = (float)(0.5 + 0.5 * SDL_sin(now));
@@ -348,11 +313,17 @@ SDL_AppResult SDL_AppIterate(void *appstatePointer)
         SDL_ALPHA_OPAQUE_FLOAT); /* new color, full alpha. */
     SDL_RenderClear(renderer);
 
-    appstate->gameLib.frame(renderer);
+    const bool shouldContinue = appstate->gameLib.frame(renderer);
 
+    ImGui::Render();
+    const ImGuiIO &io = ImGui::GetIO();
+    SDL_SetRenderScale(renderer, io.DisplayFramebufferScale.x,
+                       io.DisplayFramebufferScale.y);
     ImGui_ImplSDLRenderer3_RenderDrawData(ImGui::GetDrawData(), renderer);
     SDL_RenderPresent(renderer);
 
+    if (not shouldContinue)
+        return SDL_APP_SUCCESS;
     return SDL_APP_CONTINUE;
 }
 
@@ -387,7 +358,7 @@ getMostRecentModifyTime(const char *sourceRootPath)
             std::filesystem::last_write_time(path, errorCode);
 
         if (errorCode) {
-            SDL_LogWarn(Category_Hotreload,
+            SDL_LogWarn(int(LoggingCategory::Hotreload),
                         "Unable to read last write time of %s, got error: %s",
                         path.c_str(), errorCode.message().c_str());
             continue;
@@ -405,7 +376,7 @@ static bool scanForSourceChanges(const char *sourceRootPath,
 {
     const auto sourceLastWriteTime = getMostRecentModifyTime(sourceRootPath);
     if (not sourceLastWriteTime) {
-        SDL_LogError(Category_Hotreload,
+        SDL_LogError(int(LoggingCategory::Hotreload),
                      "Unable to read any source files at directory %s",
                      sourceRootPath);
         return false;
@@ -432,25 +403,25 @@ void AppState::reloadIfNeeded()
             if (!errorCode) {
                 if (dllLastWriteTime != recompiledDllLastWriteTime) {
                     if (this->gameLib.reload()) {
-                        SDL_LogInfo(Category_Hotreload,
+                        SDL_LogInfo(int(LoggingCategory::Hotreload),
                                     "Successfully hotreloaded library %s",
                                     WERMS_HOTRELOADABLE_DLL_PATH);
                     }
                     this->lastHotreloadRecompileTime =
                         std::chrono::system_clock::now();
                 } else {
-                    SDL_LogError(Category_Hotreload,
+                    SDL_LogError(int(LoggingCategory::Hotreload),
                                  "Did not see a change in the game DLL, "
                                  "aborting hot reload");
                 }
             } else {
                 SDL_LogError(
-                    Category_Hotreload,
+                    int(LoggingCategory::Hotreload),
                     "Failed to read write time of file %s, got error: %s",
                     WERMS_HOTRELOADABLE_DLL_PATH, errorCode.message().c_str());
             }
         } else {
-            SDL_LogError(Category_Hotreload,
+            SDL_LogError(int(LoggingCategory::Hotreload),
                          "Failed to read write time of file %s, got error: %s",
                          WERMS_HOTRELOADABLE_DLL_PATH,
                          errorCode.message().c_str());

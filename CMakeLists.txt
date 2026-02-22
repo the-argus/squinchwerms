@@ -14,6 +14,8 @@ set(hotreloaded_source_files # src/tesselator.cppm
     # src/lib/opt.cppm
     # src/lib/res.cppm
     src/library_entry.cppm
+    src/main_menu.cppm
+    src/logging.cppm
     src/lib/uninitialized_storage.cppm
     src/lib/is_instance.cppm)
 set(werms_include_dirs src/)

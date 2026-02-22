@@ -1,12 +1,27 @@
 #ifndef __WERMS_LOGGING_CATEGORY_H__
 #define __WERMS_LOGGING_CATEGORY_H__
 
-enum LoggingCategory
+enum class LoggingCategory
 {
-	Category_Renderer,
-	Category_Physics,
-	Category_Gameplay,
-	Category_Hotreload,
+    Renderer,
+    Physics,
+    Gameplay,
+    Hotreload,
 };
+
+constexpr const char *loggingCategoryToString(LoggingCategory category)
+{
+    switch (category) {
+    case LoggingCategory::Hotreload:
+        return "Hotreload";
+    case LoggingCategory::Physics:
+        return "Physics";
+    case LoggingCategory::Gameplay:
+        return "Physics";
+    case LoggingCategory::Renderer:
+        return "Renderer";
+    }
+    return "Unknown Category";
+}
 
 #endif
