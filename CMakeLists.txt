@@ -37,14 +37,14 @@ target_sources(${PROJECT_NAME}_lib PUBLIC FILE_SET CXX_MODULES FILES
 set_target_properties(
   ${PROJECT_NAME}
   PROPERTIES CXX_STANDARD_REQUIRED ON
-             CXX_STANDARD 23
+             CXX_STANDARD 20
              CXX_EXTENSIONS OFF
              CXX_SCAN_FOR_MODULES ON
              CXX_MODULE_STD OFF)
 set_target_properties(
   ${PROJECT_NAME}_lib
   PROPERTIES CXX_STANDARD_REQUIRED ON
-             CXX_STANDARD 23
+             CXX_STANDARD 20
              CXX_EXTENSIONS OFF
              CXX_SCAN_FOR_MODULES ON
              CXX_MODULE_STD OFF)
