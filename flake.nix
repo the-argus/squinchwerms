@@ -24,13 +24,15 @@
       vulkansdk = pkgs.callPackage ./vulkansdk.nix {};
     in {
       devShell =
-        pkgs.mkShell
+        # gcc 15 segfaults when trying to print the diagnostic for this one error I had
+        (pkgs.mkShell.override {stdenv = pkgs.gcc14Stdenv;})
         {
           packages = with pkgs; [
-            (writeShellScriptBin "build" "zig build -Dcpu=baseline")
-            (writeShellScriptBin "run" "build && gdb zig-out/bin/squinchwerms")
-            (writeShellScriptBin "frun" "build && zig build run -Dcpu=baseline")
-            (writeShellScriptBin "rd" "build && renderdoccmd capture -d . -c ./capture ./zig-out/bin/squinchwerms")
+            (writeShellScriptBin "configure" "cmake --preset dev")
+            (writeShellScriptBin "build" "cmake --build build-dev --parallel")
+            (writeShellScriptBin "run" "build && gdb build-dev/squinchwerms")
+            (writeShellScriptBin "frun" "build && ./build-dev/squinchwerms")
+            (writeShellScriptBin "rd" "build && renderdoccmd capture -d . -c ./capture ./build-dev/squinchwerms")
             gdb
             valgrind
             mold
