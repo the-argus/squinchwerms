@@ -40,29 +40,18 @@
             ninja
             pkg-config
             tracy
-            libGL
             cmake
             renderdoc
             vulkansdk
 
-            sdl3
-            box2d
-            glaze
-            openssl # for glaze
-            (imgui.override {
-              IMGUI_BUILD_GLFW_BINDING = false;
-              IMGUI_BUILD_SDL3_BINDING = true;
-              IMGUI_BUILD_SDL3_RENDERER_BINDING = true;
-              # IMGUI_BUILD_VULKAN_BINDING = true;
-            })
-
-            # libx11
-            # libxrandr
-            # libxinerama
-            # libxcursor
-            # libxi
-            # libxext
-            # libxft
+            libx11
+            libxrandr
+            libxinerama
+            libxcursor
+            libxi
+            libxext
+            libxft
+			libxcb # vulkan + SDL uses vulkan-xcb
           ];
 
           VULKAN_SDK = "${vulkansdk}";

@@ -1,9 +1,12 @@
-[submodule "vendor/SDL"]
-	path = vendor/SDL
-	url = https://github.com/libsdl-org/SDL
 [submodule "vendor/glaze"]
 	path = vendor/glaze
 	url = https://github.com/stephenberry/glaze
 [submodule "vendor/box2d"]
 	path = vendor/box2d
 	url = https://github.com/erincatto/box2d
+[submodule "vendor/imgui/imgui"]
+	path = vendor/imgui/imgui
+	url = https://github.com/ocornut/imgui
+[submodule "vendor/sdl"]
+	path = vendor/sdl
+	url = https://github.com/libsdl-org/SDL
