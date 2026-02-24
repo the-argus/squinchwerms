@@ -66,9 +66,10 @@ find_package(SDL3 REQUIRED)
 find_package(Vulkan REQUIRED)
 find_package(glaze REQUIRED)
 find_package(imgui REQUIRED)
+find_package(fmt REQUIRED)
 
 # main needs sdl and imgui because those have some static/global initialization
 # that needs to stick around
-target_link_libraries(${PROJECT_NAME} SDL3::SDL3 imgui)
+target_link_libraries(${PROJECT_NAME} SDL3::SDL3 imgui::imgui fmt::fmt)
 target_link_libraries(${PROJECT_NAME}_lib box2d::box2d SDL3::SDL3
-                      Vulkan::Vulkan glaze::glaze imgui)
+                      Vulkan::Vulkan glaze::glaze imgui::imgui fmt::fmt)
