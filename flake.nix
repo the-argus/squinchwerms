@@ -51,7 +51,7 @@
             libxi
             libxext
             libxft
-			libxcb # vulkan + SDL uses vulkan-xcb
+            libxcb # vulkan + SDL uses vulkan-xcb
           ];
 
           VULKAN_SDK = "${vulkansdk}";
