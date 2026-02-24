@@ -10,3 +10,6 @@
 [submodule "vendor/sdl"]
 	path = vendor/sdl
 	url = https://github.com/libsdl-org/SDL
+[submodule "vendor/fmt"]
+	path = vendor/fmt
+	url = https://github.com/fmtlib/fmt.git

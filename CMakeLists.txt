@@ -2,6 +2,16 @@ cmake_minimum_required(VERSION 3.28)
 
 project(squinchwerms)
 
+set(PACKAGESOURCE "${CMAKE_CURRENT_SOURCE_DIR}/vendor/.packages/cmake_prefix_path")
+if (EXISTS ${PACKAGESOURCE})
+	message(STATUS "File ${PACKAGESOURCE} exists")
+	file(STRINGS ${PACKAGESOURCE} ADDITIONAL_PREFIX_PATH)
+	foreach(PREFIX_PATH_ENTRY ${ADDITIONAL_PREFIX_PATH})
+		message(STATUS "Adding ${PREFIX_PATH_ENTRY} to CMAKE_PREFIX_PATH")
+		list(APPEND CMAKE_PREFIX_PATH "${PREFIX_PATH_ENTRY}")
+	endforeach()
+endif()
+
 find_program(MOLD_PROGRAM mold)
 if(MOLD_PROGRAM)
   set(CMAKE_LINKER_TYPE MOLD)
