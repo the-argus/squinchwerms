@@ -44,6 +44,10 @@
             renderdoc
             vulkansdk
 
+			wayland
+			wayland-protocols
+			wayland-scanner
+
             libx11
             libxrandr
             libxinerama
