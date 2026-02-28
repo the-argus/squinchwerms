@@ -21,7 +21,7 @@
     flake-utils.lib.eachSystem supportedSystems (system: let
       pkgs = import nixpkgs {inherit system;};
 
-      vulkansdk = pkgs.callPackage ./vulkansdk.nix {};
+      vulkansdk = pkgs.callPackage ./vendor/vulkansdk.nix {};
     in {
       devShell =
         # gcc 15 segfaults when trying to print the diagnostic for this one error I had
