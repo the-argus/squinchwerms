@@ -9,7 +9,6 @@ export module uninitialized_storage;
 
 import aliases;
 
-export namespace lib {
 template <typename T> constexpr void fillObjectWithDebugBytes(T *object)
 {
     // #ifndef NDEBUG
@@ -25,7 +24,7 @@ template <typename T> constexpr void fillObjectWithDebugBytes(T *object)
 struct Empty
 {};
 
-template <typename T> union UninitializedStorage
+export template <typename T> union UninitializedStorage
 {
   public:
     using type = T;
@@ -57,6 +56,5 @@ template <typename T> union UninitializedStorage
         requires(std::is_trivially_destructible_v<T>)
     = default;
 };
-} // namespace lib
 
-static_assert(std::is_trivially_destructible_v<lib::UninitializedStorage<int>>);
+static_assert(std::is_trivially_destructible_v<UninitializedStorage<int>>);

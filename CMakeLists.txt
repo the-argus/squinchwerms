@@ -20,14 +20,17 @@ endif()
 
 set(hotreloaded_source_files # src/tesselator.cppm
     src/aliases.cppm
-    # src/allocators/allocator.cppm src/allocators/arena.cppm
-    # src/lib/opt.cppm
-    # src/lib/res.cppm
+    src/lib/uninitialized_storage.cppm
+    src/lib/std_arraylike_container.cppm
+    src/lib/is_instance.cppm
+    src/allocators/allocator.cppm
+	# src/allocators/arena.cppm
+    src/lib/slice.cppm
+    src/lib/opt.cppm
+    src/lib/res.cppm
     src/library_entry.cppm
     src/main_menu.cppm
-    src/logging.cppm
-    src/lib/uninitialized_storage.cppm
-    src/lib/is_instance.cppm)
+    src/logging.cppm)
 set(werms_include_dirs src/)
 
 # the game may run `cmake --build ${BUILD_DIR} --target ${PROJECT_NAME}_lib` in

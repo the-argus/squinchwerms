@@ -2,36 +2,34 @@ module;
 
 #include "macros.h"
 #include <type_traits>
+#include <utility>
 
 export module res;
 
 import uninitialized_storage;
+import is_instance;
 import opt;
 import aliases;
 
-export namespace lib {
+export template <typename T>
+concept ErrorEnum = requires {
+    requires std::is_enum_v<T>;
+    requires(u64(T::Success) == 0);
+};
 
-	template <typename T>
-		concept ErrorEnum = requires {
-			requires std::is_enum_v<T>;
-			requires T::Success == 0;
-		};
-
-template <SimpleType T, ErrorEnum E>
-class Res
+export template <SimpleType T, ErrorEnum E> class Res
 {
   private:
-
     UninitializedStorage<T> m_value;
     E m_error;
 
     template <typename U>
     inline static constexpr bool not_tag_or_error =
-        (!std::is_same_v<lib::in_place_t, std::remove_cvref_t<U>> and (not std::is_same_v<E, std::remove_cvref_t<U>>);
-    
+        (not std::is_same_v<in_place_t, std::remove_cvref_t<U>> and
+         not std::is_same_v<E, std::remove_cvref_t<U>>);
 
   public:
-    template <typename U, typename R> friend class Res;
+    template <SimpleType U, ErrorEnum R> friend class Res;
 
     using value_type = T;
 
@@ -44,7 +42,7 @@ class Res
     template <typename... Args>
         requires std::is_constructible_v<T, Args...>
     constexpr explicit Res(in_place_t, Args &&...args) NOEXCEPT
-        : m_hasValue(true),
+        : m_error(E::Success),
           m_value(in_place, std::forward<Args>(args)...)
     {
     }
@@ -52,28 +50,32 @@ class Res
     // convert from a success value, if type is convertible to the success value
     template <typename Other = T>
     constexpr Res(Other &&other) NOEXCEPT
-        requires(!is_instance_c<Other, lib::Res> and not_tag_or_error<Other> and
+        requires(!IsInstance<Other, ::Res> and not_tag_or_error<Other> and
                  std::is_constructible_v<T, decltype(other)> and
                  std::is_convertible_v<decltype(other), T>)
-        : m_hasValue(E::Success), m_value(in_place, std::forward<Other>(other))
+        : m_error(E::Success), m_value(in_place, std::forward<Other>(other))
     {
     }
 
-    // construct from a success value, if success value is constructible from type
+    // construct from a success value, if success value is constructible from
+    // type
     template <typename OtherT>
-    constexpr Res(OtherT &&other) NOEXCEPT
-        requires(!is_instance_c<OtherT, lib::Res> and not_tag_or_error<OtherT> and std::is_constructible_v<T, decltype(other)> and
+    explicit constexpr Res(OtherT &&other) NOEXCEPT
+        requires(!IsInstance<OtherT, ::Res> and not_tag_or_error<OtherT> and
+                 std::is_constructible_v<T, decltype(other)> and
                  !std::is_convertible_v<decltype(other), T>)
-        : m_hasValue(true), m_value(in_place, std::forward<OtherT>(other))
+        : m_error(E::Success), m_value(in_place, std::forward<OtherT>(other))
     {
     }
 
-	// res is never copyable, unwrap before copying
+    // res is never copyable, unwrap before copying
     constexpr Res(const Res &other) NOEXCEPT = delete;
     constexpr Res &operator=(const Res &) NOEXCEPT = delete;
 
     constexpr bool isError() const NOEXCEPT { return m_error != E::Success; }
     constexpr bool isSuccess() const NOEXCEPT { return m_error == E::Success; }
+
+    constexpr E error() const NOEXCEPT { return m_error; }
 
     constexpr T *operator->() & NOEXCEPT
     {
@@ -107,4 +109,3 @@ class Res
         return std::move(this->m_value.value);
     }
 };
-}
