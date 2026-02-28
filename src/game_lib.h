@@ -57,7 +57,8 @@ class GameLib
         w_assert(not m_gameContext, "firstLoad called multiple times");
         const bool status = reload();
 
-        m_gameContext = m_initCallback();
+        if (status)
+            m_gameContext = m_initCallback();
 
         return status;
     }
