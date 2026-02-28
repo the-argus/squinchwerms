@@ -25,12 +25,3 @@ cmake --build build-dev --parallel
 
 That will configure and build the project. To run the project, execute the program
 `build-dev/squinchwerms` with the root of this repo as your working directory.
-
-## Plan
-
-- [ ] Making moving around. WASD to control head and arrow keys to control end.
-      The two are connected by segments with some elasticity.
-- [ ] Procedurally generate a mesh based on nearby terriain nodes with marching
-      squares.
-- [ ] Allow eating dirt with head, which fills up dirt meter. Excrete dirt with
-      other end.
