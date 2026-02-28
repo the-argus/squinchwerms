@@ -43,6 +43,8 @@ endif()
 
 target_sources(${PROJECT_NAME}_lib PUBLIC FILE_SET CXX_MODULES FILES
                                           ${hotreloaded_source_files})
+# get around fmt headers having a static symbol in them
+target_sources(${PROJECT_NAME}_lib PUBLIC src/fmt_stub.cpp)
 
 set_target_properties(
   ${PROJECT_NAME}

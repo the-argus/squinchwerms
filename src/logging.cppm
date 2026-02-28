@@ -1,12 +1,11 @@
 module;
 
+#include "fmt_stub.h"
 #include "logging_categories.h"
 
-#include <chrono>
-#include <utility>
-
-#include <fmt/chrono.h>
 #include <fmt/core.h>
+
+#include <utility>
 
 export module logging;
 
@@ -18,19 +17,12 @@ export module logging;
 #define COLOR_DEFAULT "\033[39m"
 #define BUFSIZE 500
 
-// NOTE: for reasons I can only imagine, this does not compile if it is inside
-// one of the templated log functions below due to not finding operator- for
-// std::chrono::duration.
-constexpr auto printNow() noexcept
-{
-    fmt::println(stdout, "[{:%H:%M:%S}]", std::chrono::system_clock::now());
-}
-
 export namespace lg { // log is used by cmath, I think.
 using Category = LoggingCategory;
 
 template <typename... Args>
-void debug(Category category, fmt::format_string<Args...> fmt, Args &&...args)
+constexpr void debug(Category category, fmt::format_string<Args...> fmt,
+                     Args &&...args)
 {
     char buf[BUFSIZE] = {};
     fmt::format_to_n(buf, sizeof(buf) - 1, fmt, std::forward<Args>(args)...);
@@ -40,11 +32,12 @@ void debug(Category category, fmt::format_string<Args...> fmt, Args &&...args)
 }
 
 template <typename... Args>
-void info(Category category, fmt::format_string<Args...> fmt, Args &&...args)
+constexpr void info(Category category, fmt::format_string<Args...> fmt,
+                    Args &&...args)
 {
     char buf[BUFSIZE] = {};
     fmt::format_to_n(buf, sizeof(buf) - 1, fmt, std::forward<Args>(args)...);
-    printNow();
+    stub::printNow();
     fmt::println(stdout, COLOR_WHITE "[INFO]" COLOR_DEFAULT "[{}]: {}",
                  loggingCategoryToString(category),
                  static_cast<const char *>(buf));
@@ -56,7 +49,7 @@ constexpr void warn(Category category, fmt::format_string<Args...> fmt,
 {
     char buf[BUFSIZE] = {};
     fmt::format_to_n(buf, sizeof(buf) - 1, fmt, std::forward<Args>(args)...);
-    printNow();
+    stub::printNow();
     fmt::println(stdout, COLOR_YELLOW "[WARN]" COLOR_DEFAULT "[{}]: {}",
                  loggingCategoryToString(category),
                  static_cast<const char *>(buf));
@@ -68,7 +61,7 @@ constexpr void error(Category category, fmt::format_string<Args...> fmt,
 {
     char buf[BUFSIZE] = {};
     fmt::format_to_n(buf, sizeof(buf) - 1, fmt, std::forward<Args>(args)...);
-    printNow();
+    stub::printNow();
     fmt::println(stdout, COLOR_RED "[EROR]" COLOR_DEFAULT "[{}]: {}",
                  loggingCategoryToString(category),
                  static_cast<const char *>(buf));
@@ -80,7 +73,7 @@ constexpr void fatal(Category category, fmt::format_string<Args...> fmt,
 {
     char buf[BUFSIZE] = {};
     fmt::format_to_n(buf, sizeof(buf) - 1, fmt, std::forward<Args>(args)...);
-    printNow();
+    stub::printNow();
     fmt::println(stdout, COLOR_RED "[FATAL]" COLOR_DEFAULT "[{}]: {}",
                  loggingCategoryToString(category),
                  static_cast<const char *>(buf));
