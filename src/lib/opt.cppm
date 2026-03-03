@@ -27,6 +27,9 @@ export constexpr Null null = {};
 export template <typename T> class Opt;
 
 export template <typename T>
+concept Reference = std::is_lvalue_reference_v<T>;
+
+export template <typename T>
 concept SimpleType = requires {
     requires not std::is_reference_v<T>;
     requires not std::is_constructible_v<T, in_place_t>;
@@ -252,59 +255,188 @@ export template <SimpleType T> class Opt<T>
         m_value.fillWithDebugBytes();
     }
 
-    constexpr explicit operator bool() const NOEXCEPT { return m_hasValue; }
-    constexpr bool hasValue() const NOEXCEPT { return m_hasValue; }
+    [[nodiscard]] constexpr explicit operator bool() const NOEXCEPT
+    {
+        return m_hasValue;
+    }
+    [[nodiscard]] constexpr bool hasValue() const NOEXCEPT
+    {
+        return m_hasValue;
+    }
 
-    constexpr T *operator->() & NOEXCEPT
+    [[nodiscard]] constexpr T *operator->() & NOEXCEPT
     {
         w_assert(this->m_hasValue, "attempt to dereference null opt");
         return std::addressof(this->m_value.value);
     }
 
-    constexpr const T *operator->() const &NOEXCEPT
+    [[nodiscard]] constexpr const T *operator->() const &NOEXCEPT
     {
         w_assert(this->m_hasValue, "attempt to dereference null opt");
         return std::addressof(this->m_value.value);
     }
 
-    constexpr const T *operator->() && = delete;
+    [[nodiscard]] constexpr const T *operator->() && = delete;
 
-    constexpr T &unwrap() & NOEXCEPT
+    [[nodiscard]] constexpr T &unwrap() & NOEXCEPT
     {
         w_assert(this->m_hasValue, "attempt to unwrap null opt");
         return this->m_value.value;
     }
 
-    constexpr const T &unwrap() const &NOEXCEPT
+    [[nodiscard]] constexpr const T &unwrap() const &NOEXCEPT
     {
         w_assert(this->m_hasValue, "attempt to unwrap null opt");
         return this->m_value.value;
     }
 
-    constexpr T &&unwrap() && NOEXCEPT
+    [[nodiscard]] constexpr T &&unwrap() && NOEXCEPT
     {
         w_assert(this->m_hasValue, "attempt to unwrap null opt");
         return std::move(this->m_value.value);
     }
 
-    template <IsInstance<Opt> OtherT>
-    constexpr bool operator==(const OtherT &other) const NOEXCEPT
-        requires is_comparable_c<T, typename OtherT::value_type>
+    template <typename OtherT>
+    [[nodiscard]] constexpr bool
+    deepCompare(const Opt<OtherT> &other) const NOEXCEPT
+        requires is_comparable_c<T, std::remove_reference_t<OtherT>>
     {
         if (other.hasValue() and this->hasValue()) {
-            return other.m_value.value == this->m_value.value;
+            if constexpr (Reference<OtherT>) {
+                return *other.m_value == this->m_value.value;
+            } else {
+                return other.m_value.value == this->m_value.value;
+            }
         }
         return other.hasValue() == this->hasValue();
     }
 
     template <typename OtherT>
-        requires(!IsInstance<OtherT, Opt>)
-    constexpr bool operator==(const OtherT &other) const NOEXCEPT
+    [[nodiscard]] constexpr bool
+    operator==(const Opt<OtherT> &other) const NOEXCEPT
+        requires is_comparable_c<T, std::remove_reference_t<OtherT>>
+    {
+        return deepCompare(other);
+    }
+
+    template <typename OtherT>
+        requires(not IsInstance<OtherT, Opt>)
+    [[nodiscard]] constexpr bool deepCompare(const OtherT &other) const NOEXCEPT
         requires is_comparable_c<T, OtherT>
     {
         if (not this->hasValue())
             return false;
         return this->m_value.value == other;
+    }
+
+    template <typename OtherT>
+        requires(not IsInstance<OtherT, Opt>)
+    [[nodiscard]] constexpr bool operator==(const OtherT &other) const NOEXCEPT
+        requires is_comparable_c<T, OtherT>
+    {
+        return deepCompare(other);
+    }
+};
+
+export template <Reference T> class Opt<T>
+{
+  private:
+    using Pointer = std::add_pointer_t<std::remove_reference_t<T>>;
+
+    Pointer m_value = nullptr;
+
+  public:
+    using value_type = T;
+
+    constexpr Opt() = default;
+    constexpr Opt(Opt &&) = default;
+    constexpr Opt &operator=(Opt &&) = default;
+    constexpr Opt(const Opt &) = default;
+    constexpr Opt &operator=(const Opt &) = default;
+
+    constexpr Opt(Pointer pointer) NOEXCEPT : m_value(pointer) {}
+
+    constexpr Opt(T reference) NOEXCEPT : m_value(std::addressof(reference)) {}
+
+    template <Reference OtherRef>
+        requires std::is_convertible_v<Pointer, typename Opt<OtherRef>::Pointer>
+    constexpr operator Opt<OtherRef>() const NOEXCEPT
+    {
+        return m_value;
+    }
+
+    constexpr void emplace(T reference) NOEXCEPT
+    {
+        m_value = std::addressof(reference);
+    }
+
+    constexpr void reset() NOEXCEPT { m_value = nullptr; }
+
+    constexpr Opt &operator=(std::nullptr_t) NOEXCEPT
+    {
+        reset();
+        return *this;
+    }
+
+    constexpr explicit operator bool() const NOEXCEPT { return m_value; }
+
+    constexpr bool hasValue() const NOEXCEPT { return m_value; }
+
+    constexpr Pointer operator->() const NOEXCEPT
+    {
+        w_assert(this->hasValue(), "attempt to dereference null opt");
+        return m_value;
+    }
+
+    constexpr T unwrap() const NOEXCEPT
+    {
+        w_assert(this->hasValue(), "attempt to dereference null opt");
+        return *m_value;
+    }
+
+    constexpr T operator*() const NOEXCEPT { return unwrap(); }
+
+    constexpr bool isAliasFor(const Opt &other) const NOEXCEPT
+    {
+        return m_value == other.m_value;
+    }
+
+    constexpr bool
+    isAliasFor(const std::remove_cvref_t<T> &other) const NOEXCEPT
+    {
+        return m_value == std::addressof(other);
+    }
+
+    template <typename OtherT>
+    [[nodiscard]] constexpr bool
+    deepCompare(const Opt<OtherT> &other) const NOEXCEPT
+        requires is_comparable_c<T, std::remove_reference_t<OtherT>>
+    {
+        if constexpr (std::is_same_v<T, OtherT>)
+            if (isAliasFor(other))
+                return true;
+        if (not other.hasValue() and not this->hasValue())
+            return true;
+        if (other.hasValue() and this->hasValue()) {
+            if constexpr (Reference<OtherT>) {
+                return *m_value == *other.m_value;
+            } else {
+                return *m_value == other.unwrap();
+            }
+        }
+        return false;
+    }
+
+    template <typename OtherT>
+        requires(not IsInstance<OtherT, Opt>)
+    constexpr bool deepCompare(const OtherT &other) const NOEXCEPT
+        requires is_comparable_c<T, OtherT>
+    {
+        if (m_value == std::addressof(other))
+            return true;
+        if (this->hasValue())
+            return *m_value == other;
+        return false;
     }
 };
 
@@ -537,12 +669,49 @@ constexpr bool testCopying()
     return true;
 }
 
+constexpr bool testReference()
+{
+    int i = 1;
+    Opt<int &> intRef = i;
+
+    w_assert(intRef.isAliasFor(i), "");
+    w_assert(not intRef.deepCompare(3), "");
+    w_assert(intRef.deepCompare(1), "");
+    w_assert(not intRef.deepCompare(Opt<int>(3)), "");
+    w_assert(intRef.deepCompare(Opt<int>(1)), "");
+
+    int j = 2;
+    Opt<int &> nonconstRef = j;
+    Opt<const int &> constRef = j;
+
+    w_assert(constRef.deepCompare(2), "");
+    *nonconstRef = 3;
+    w_assert(not constRef.deepCompare(2), "");
+    w_assert(constRef.deepCompare(3), "");
+
+    w_assert(nonconstRef, "");
+    nonconstRef = nullptr;
+    w_assert(not nonconstRef, "");
+
+    w_assert(intRef.isAliasFor(i), "");
+    intRef = j;
+    w_assert(not intRef.isAliasFor(i), "");
+    w_assert(intRef.isAliasFor(j), "");
+
+    intRef.emplace(i);
+    w_assert(intRef.isAliasFor(i), "");
+    w_assert(not intRef.isAliasFor(j), "");
+
+    return true;
+}
+
 static_assert(testEqualityAndReset());
 static_assert(testEmplace());
 static_assert(testDereference());
 static_assert(testConvertingConstructorsAndAssignment());
 static_assert(testExplicitConstructors());
 static_assert(testCopying());
+static_assert(testReference());
 
 static_assert(std::is_trivially_copy_constructible_v<::Opt<i32>>);
 static_assert(std::is_trivially_copy_assignable_v<::Opt<i32>>);
