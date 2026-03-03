@@ -11,15 +11,19 @@ import is_instance;
 import opt;
 import aliases;
 
+export template <typename T, typename E> class Res;
+
 export template <typename T>
 concept ErrorEnum = requires {
     requires std::is_enum_v<T>;
     requires(u64(T::Success) == 0);
 };
 
-export template <SimpleType T, ErrorEnum E> class Res
+export template <SimpleType T, ErrorEnum E> class Res<T, E>
 {
   private:
+    static_assert(!std::is_constructible_v<T, E>);
+
     UninitializedStorage<T> m_value;
     E m_error;
 
@@ -29,14 +33,21 @@ export template <SimpleType T, ErrorEnum E> class Res
          not std::is_same_v<E, std::remove_cvref_t<U>>);
 
   public:
-    template <SimpleType U, ErrorEnum R> friend class Res;
+    template <typename U, typename R> friend class Res;
 
     using value_type = T;
 
-    constexpr Res() = default;
+    constexpr Res() = delete;
     constexpr Res(Res &&) = default;
     constexpr Res &operator=(Res &&) = default;
     constexpr ~Res() = default;
+
+    constexpr Res(E errorCode) : m_error(errorCode)
+    {
+        if (errorCode == E::Success) [[unlikely]] {
+            w_abort("Attempt to construct res with success error code");
+        }
+    }
 
     // construct in_place
     template <typename... Args>
@@ -107,5 +118,61 @@ export template <SimpleType T, ErrorEnum E> class Res
     {
         w_assert(this->isSuccess(), "attempt to dereference error Res");
         return std::move(this->m_value.value);
+    }
+};
+
+export template <Reference T, ErrorEnum E> class Res<T, E>
+{
+  private:
+    // ambiguous types
+    static_assert(!std::is_convertible_v<T, E &>);
+    static_assert(!std::is_convertible_v<T, const E &>);
+    static_assert(!std::is_convertible_v<T, E &&>);
+    static_assert(!std::is_convertible_v<E &, T>);
+    static_assert(!std::is_convertible_v<const E &, T>);
+    static_assert(!std::is_convertible_v<E &&, T>);
+
+    using Underlying = std::remove_cvref_t<T>;
+    using Pointer = std::add_pointer_t<Underlying>;
+
+    Pointer m_value;
+    E m_error;
+
+  public:
+    template <typename U, typename R> friend class Res;
+
+    using value_type = T;
+
+    constexpr explicit Res(T reference) NOEXCEPT : m_error(E::Success),
+                                                   m_value(reference)
+    {
+    }
+
+    constexpr Res(E errorCode) : m_error(errorCode)
+    {
+        if (errorCode == E::Success) [[unlikely]] {
+            w_abort("Attempt to construct res with success error code");
+        }
+    }
+
+    constexpr Res(const Res &other) NOEXCEPT = delete;
+    constexpr Res &operator=(const Res &) NOEXCEPT = delete;
+    constexpr Res(Res &&) = default;
+    constexpr Res &operator=(Res &&) = default;
+    constexpr ~Res() = default;
+
+    constexpr bool isError() const NOEXCEPT { return m_error != E::Success; }
+    constexpr bool isSuccess() const NOEXCEPT { return m_error == E::Success; }
+
+    constexpr T *operator->() const NOEXCEPT
+    {
+        w_assert(this->isSuccess(), "attempt to dereference error Res");
+        return m_value;
+    }
+
+    constexpr T unwrap() NOEXCEPT
+    {
+        w_assert(this->isSuccess(), "attempt to dereference error Res");
+        return *m_value;
     }
 };
