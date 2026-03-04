@@ -41,10 +41,10 @@ struct ReallocateRequest
     // minimum size of the memory after reallocating. arraylist may set this to
     // current size + sizeof(T) when appending. Although it is not the optimal
     // size increase, it is the minimum needed to continue without an error.
-    u64 new_size_bytes;
+    u64 newSizeBytes;
     // the optimal new size after reallocation. for an arraylist this would be
     // current size * growth_factor. ignored if shrinking or if zero
-    u64 preferred_size_bytes = 0;
+    u64 preferredSizeBytes = 0;
     u64 alignment = alloc::default_align;
     bool inPlaceOrElseFail = false;
 
@@ -52,18 +52,16 @@ struct ReallocateRequest
     {
         return !memory.isEmpty() &&
                // no attempt to... free the memory?
-               (new_size_bytes != 0) &&
+               (newSizeBytes != 0) &&
                // preferred should be zero OR ( (we're growing OR staying the
                // same size) + preferred is greater than required )
-               (preferred_size_bytes == 0 ||
-                (new_size_bytes >= memory.size() &&
-                 preferred_size_bytes > new_size_bytes));
+               (preferredSizeBytes == 0 || (newSizeBytes >= memory.size() &&
+                                            preferredSizeBytes > newSizeBytes));
     }
 
     [[nodiscard]] constexpr size_t calculatePreferredSize() const noexcept
     {
-        return preferred_size_bytes == 0 ? new_size_bytes
-                                         : preferred_size_bytes;
+        return preferredSizeBytes == 0 ? newSizeBytes : preferredSizeBytes;
     }
 };
 } // namespace alloc
@@ -105,18 +103,18 @@ export class Allocator
         RestorePoint(const RestorePoint &) = delete;
         RestorePoint &operator=(const RestorePoint &) = delete;
         RestorePoint(RestorePoint &&) = delete;
-        RestorePoint &operator=(RestorePoint &&) = delete;
+        RestorePoint &operator==(RestorePoint &&) = delete;
 
         constexpr ~RestorePoint()
         {
-            m_allocator.impl_arena_restore_scope(m_handle);
+            m_allocator.impl_arenaRestoreScope(m_handle);
         }
 
         RestorePoint() = delete;
 
       private:
         constexpr RestorePoint(Allocator &allocator)
-            : m_allocator(allocator), m_handle(allocator.impl_arena_new_scope())
+            : m_allocator(allocator), m_handle(allocator.impl_arenaNewScope())
         {
         }
 
@@ -124,7 +122,32 @@ export class Allocator
         Allocator &m_allocator;
     };
 
-    [[nodiscard]] constexpr RestorePoint begin_scope() NOEXCEPT
+    template <typename T>
+        requires std::is_invocable_r_v<void, T> and
+                 std::is_move_constructible_v<T> and
+                 std::is_trivially_destructible_v<T>
+    constexpr void pushDestructor(T &&destructorCallableObject) NOEXCEPT
+    {
+        struct Destructor : public DestructorBase
+        {
+            T callable;
+
+            Destructor(T &&callableParam) : callable(std::move(callableParam))
+            {
+                this->destructorFunction = [](DestructorBase &self) {
+                    static_cast<Destructor *>(&self)->callable();
+                };
+            }
+        };
+
+        Res maybeDestructor =
+            this->make<Destructor>(std::move(destructorCallableObject));
+        if (not maybeDestructor) [[unlikely]]
+            return maybeDestructor.error();
+        this->impl_arenaPushDestructor(maybeDestructor.unwrap());
+    }
+
+    [[nodiscard]] constexpr RestorePoint beginScope() NOEXCEPT
     {
         return RestorePoint(*this);
     }
@@ -151,16 +174,25 @@ export class Allocator
 
         std::construct_at(made, std::forward<Args>(args)...);
 
-        return return_type(*made);
+        return *made;
     }
 
   protected:
+    struct DestructorBase
+    {
+        Opt<DestructorBase &> prev;
+        void (*destructorFunction)(DestructorBase &self);
+    };
+
+    constexpr virtual void
+    impl_arenaPushDestructor(DestructorBase &entry) NOEXCEPT = 0;
+
     [[nodiscard]] constexpr virtual Res<Bytes, alloc::Error>
     impl_allocate(const alloc::Request &) NOEXCEPT = 0;
 
-    [[nodiscard]] constexpr virtual void *impl_arena_new_scope() NOEXCEPT = 0;
+    [[nodiscard]] constexpr virtual void *impl_arenaNewScope() NOEXCEPT = 0;
 
-    constexpr virtual void impl_arena_restore_scope(void *handle) NOEXCEPT = 0;
+    constexpr virtual void impl_arenaRestoreScope(void *handle) NOEXCEPT = 0;
 
     constexpr virtual void impl_deallocate(void *memory,
                                            size_t size_hint) NOEXCEPT = 0;
@@ -169,32 +201,8 @@ export class Allocator
     impl_reallocate(const alloc::ReallocateRequest &options) NOEXCEPT = 0;
 };
 
-template <typename T>
-concept AllocatorType = requires(
-    const T &const_allocator, T &allocator, const alloc::Request &request,
-    const alloc::ReallocateRequest &reallocate_request, void *voidptr) {
-    { allocator.allocate(request) } -> std::same_as<Bytes>;
-
-    // incomplete test for make_non_owning
-    {
-        allocator.template make<int>(1)
-    } -> std::same_as<Res<int &, alloc::Error>>;
-
-    {
-        allocator.template make<int>()
-    } -> std::same_as<Res<int &, alloc::Error>>;
-
-    requires !(requires {
-        { const_allocator.allocate(request) };
-    });
-
-    { allocator.deallocate(voidptr) } -> std::same_as<void>;
-
-    { allocator.reallocate(reallocate_request) } -> std::same_as<Bytes>;
-
-    // make sure nonconst functions do not work on const version
-    requires !(requires {
-        { const_allocator.deallocate(voidptr) };
-        { const_allocator.reallocate(reallocate_request) };
-    });
+export template <typename T>
+concept AllocatorType = requires {
+    requires std::is_base_of_v<Allocator, T>;
+    requires std::is_convertible_v<T &, Allocator &>;
 };

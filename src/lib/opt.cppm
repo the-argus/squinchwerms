@@ -372,6 +372,13 @@ export template <Reference T> class Opt<T>
 
     constexpr void reset() NOEXCEPT { m_value = nullptr; }
 
+    constexpr Opt(Null) NOEXCEPT {}
+    constexpr Opt &operator=(Null) NOEXCEPT
+    {
+        this->reset();
+        return *this;
+    }
+
     constexpr Opt &operator=(std::nullptr_t) NOEXCEPT
     {
         reset();

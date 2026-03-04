@@ -132,7 +132,7 @@ export template <Reference T, ErrorEnum E> class Res<T, E>
     static_assert(!std::is_convertible_v<const E &, T>);
     static_assert(!std::is_convertible_v<E &&, T>);
 
-    using Underlying = std::remove_cvref_t<T>;
+    using Underlying = std::remove_reference_t<T>;
     using Pointer = std::add_pointer_t<Underlying>;
 
     Pointer m_value;
@@ -143,8 +143,8 @@ export template <Reference T, ErrorEnum E> class Res<T, E>
 
     using value_type = T;
 
-    constexpr explicit Res(T reference) NOEXCEPT : m_error(E::Success),
-                                                   m_value(reference)
+    constexpr Res(T reference) NOEXCEPT : m_error(E::Success),
+                                          m_value(std::addressof(reference))
     {
     }
 
@@ -164,7 +164,7 @@ export template <Reference T, ErrorEnum E> class Res<T, E>
     constexpr bool isError() const NOEXCEPT { return m_error != E::Success; }
     constexpr bool isSuccess() const NOEXCEPT { return m_error == E::Success; }
 
-    constexpr T *operator->() const NOEXCEPT
+    constexpr Pointer operator->() const NOEXCEPT
     {
         w_assert(this->isSuccess(), "attempt to dereference error Res");
         return m_value;
@@ -176,3 +176,27 @@ export template <Reference T, ErrorEnum E> class Res<T, E>
         return *m_value;
     }
 };
+
+export template <IsInstance<Res> T>
+[[nodiscard]] constexpr bool isSuccess(const T &res)
+{
+    return res.isSuccess();
+}
+
+export template <ErrorEnum T>
+[[nodiscard]] constexpr bool isSuccess(const T &error)
+{
+    return error == T::Success;
+}
+
+export template <IsInstance<Res> T>
+[[nodiscard]] constexpr bool isError(const T &res)
+{
+    return res.isError();
+}
+
+export template <ErrorEnum T>
+[[nodiscard]] constexpr bool isError(const T &error)
+{
+    return error != T::Success;
+}

@@ -24,7 +24,7 @@ set(hotreloaded_source_files # src/tesselator.cppm
     src/lib/std_arraylike_container.cppm
     src/lib/is_instance.cppm
     src/allocators/allocator.cppm
-	# src/allocators/arena.cppm
+	src/allocators/arena.cppm
     src/lib/slice.cppm
     src/lib/opt.cppm
     src/lib/res.cppm

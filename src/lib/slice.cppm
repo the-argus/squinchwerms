@@ -243,7 +243,8 @@ export template <typename Viewed> class Slice
 
     constexpr operator bool() { return not isEmpty(); }
 
-    template <typename T> friend Slice<T> rawSlice(T &data, u64 size) NOEXCEPT;
+    template <typename T>
+    friend Slice<T> unsafe::rawSlice(T &data, u64 size) NOEXCEPT;
     template <typename T> friend constexpr Slice<T> makeNullSlice() NOEXCEPT;
 
     friend struct fmt::formatter<Slice>;
@@ -280,7 +281,8 @@ export template <StdArraylikeContainer Container>
                 "value is out of range.");
     }
 
-    return rawSlice(*(container.data() + options.start), options.length);
+    return unsafe::rawSlice(*(container.data() + options.start),
+                            options.length);
 }
 
 export template <typename Viewed>
@@ -310,6 +312,126 @@ export template <typename T>
 [[nodiscard]] constexpr Slice<T> sliceFromOne(T &item) NOEXCEPT
 {
     return unsafe::rawSlice(item, 1);
+}
+
+export template <typename T>
+[[nodiscard]] constexpr bool memoverlaps(Slice<T> a, Slice<T> b) NOEXCEPT
+{
+    return a.uncheckedAddressOfFirstItem() <
+               (b.uncheckedAddressOfFirstItem() + b.size()) &&
+           b.uncheckedAddressOfFirstItem() <
+               (a.uncheckedAddressOfFirstItem() + a.size());
+}
+
+export template <typename T> struct MemcopyOptions
+{
+    Slice<T> to;
+    Slice<T> from;
+};
+
+export template <typename T> struct MemcontainsOptions
+{
+    Slice<T> outer;
+    Slice<T> inner;
+};
+
+export template <typename T>
+[[nodiscard]] constexpr bool
+memcontains(const MemcontainsOptions<T> &options) NOEXCEPT
+{
+    if (options.outer.isEmpty()) [[unlikely]] {
+        return false;
+    }
+    return options.outer.uncheckedAddressOfFirstItem() <=
+               options.inner.uncheckedAddressOfFirstItem() &&
+           options.outer.uncheckedAddressOfFirstItem() + options.outer.size() >=
+               options.inner.uncheckedAddressOfFirstItem() +
+                   options.inner.size();
+}
+
+export template <typename T>
+constexpr Slice<T> memcopy(const MemcopyOptions<T> &options) NOEXCEPT
+{
+    static_assert(std::is_trivially_copyable_v<T>,
+                  "Cannot memcopy non-trivially copyable type.");
+
+    if (options.from.isEmpty()) {
+        return options.to.subslice({.length = 0});
+    }
+
+    if (options.to.size() < options.from.size() ||
+        memoverlaps(options.to, options.from)) [[unlikely]] {
+        w_abort("Attempt to memcopy but the memory given either overlaps or "
+                "has a smaller destination than source.");
+    }
+
+    ::memcpy(options.to.uncheckedAddressOfFirstItem(),
+             options.from.uncheckedAddressOfFirstItem(),
+             options.from.size() * sizeof(T));
+
+    return unsafe::rawSlice(*options.to.uncheckedAddressOfFirstItem(),
+                            options.from.size());
+}
+
+export [[nodiscard]] constexpr bool memcompare(Bytes lhs, Bytes rhs) NOEXCEPT
+{
+    if (lhs.size() != rhs.size()) {
+        return false;
+    }
+    if (lhs.uncheckedAddressOfFirstItem() ==
+        rhs.uncheckedAddressOfFirstItem()) {
+        return true;
+    }
+    for (size_t i = 0; i < lhs.size(); ++i) {
+        if (lhs.uncheckedAddressOfFirstItem()[i] !=
+            rhs.uncheckedAddressOfFirstItem()[i]) {
+            return false;
+        }
+    }
+    return true;
+}
+
+export template <typename T, typename... Args>
+    requires(std::is_constructible_v<T, Args...> and not std::is_const_v<T> and
+             std::is_trivially_destructible_v<T>)
+constexpr void memfill(Slice<T> slice, Args &&...args) NOEXCEPT
+{
+    if constexpr (std::is_same_v<T, u8>) {
+        ::memset(slice.uncheckedAddressOfFirstItem(),
+                 u8(std::forward<Args>(args)...), slice.size());
+    } else {
+        for (size_t i = 0; i < slice.size(); ++i) {
+            auto &item = slice.uncheckedAccess(i);
+            std::construct_at(item, std::forward<Args>(args)...);
+        }
+    }
+}
+
+export template <typename T>
+    requires(not std::is_const_v<T>)
+[[nodiscard]] constexpr Bytes reinterpretAsBytes(Slice<T> slice) NOEXCEPT
+{
+    return unsafe::rawSlice(
+        reinterpret_cast<u8 *>(slice.uncheckedAddressOfFirstItem()),
+        slice.sizeInBytes());
+}
+
+export template <typename T>
+    requires(std::is_const_v<T>)
+[[nodiscard]] constexpr Slice<const u8>
+reinterpretAsBytes(Slice<T> slice) NOEXCEPT
+{
+    return unsafe::rawSlice(
+        reinterpret_cast<const u8 *>(slice.uncheckedAddressOfFirstItem()),
+        slice.sizeInBytes());
+}
+
+export template <typename T>
+[[nodiscard]] constexpr Slice<T> reinterpretBytesAs(Bytes bytes) NOEXCEPT
+{
+    return unsafe::rawSlice(
+        reinterpret_cast<T *>(bytes.uncheckedAddressOfFirstItem()),
+        bytes.size() / sizeof(T));
 }
 
 export template <typename Viewed> struct fmt::formatter<Slice<Viewed>>
