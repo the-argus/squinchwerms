@@ -5,6 +5,13 @@ module;
 export module entry;
 import main_menu;
 import logging;
+import box2d;
+
+struct Context
+{
+	b2::WorldID world;
+	b2::BodyID floor;
+};
 
 extern "C"
 {
