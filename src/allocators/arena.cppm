@@ -2,6 +2,7 @@ module;
 
 #include "macros.h"
 
+#include <algorithm> // for std::max
 #include <cstring>
 #include <memory> // for std::align
 

@@ -2,6 +2,7 @@ module;
 
 #include "macros.h"
 #include <cstring>
+#include <memory> // addressof
 #include <type_traits>
 #include <utility>
 

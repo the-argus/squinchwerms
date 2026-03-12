@@ -1,6 +1,7 @@
 module;
 
 #include "macros.h"
+#include <memory> // addressof
 #include <type_traits>
 #include <utility>
 
