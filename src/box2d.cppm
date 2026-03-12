@@ -37,7 +37,7 @@ getDataBufferHelper(Allocator &allocator, IDType id,
 }
 
 export namespace b2 {
-using Vec2 = Vec2;
+using Vec2 = b2Vec2;
 using Segment = b2Segment;
 using Capsule = b2Capsule;
 using Circle = b2Circle;
@@ -57,7 +57,7 @@ enum class BodyType
     Dynamic = 2,
 };
 
-using BodyID = BodyID;
+using BodyID = b2BodyId;
 using ShapeID = b2ShapeId;
 using WorldID = b2WorldId;
 using JointID = b2JointId;
