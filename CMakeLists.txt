@@ -2,14 +2,15 @@ cmake_minimum_required(VERSION 3.28)
 
 project(squinchwerms)
 
-set(PACKAGESOURCE "${CMAKE_CURRENT_SOURCE_DIR}/vendor/.packages/cmake_prefix_path")
-if (EXISTS ${PACKAGESOURCE})
-	message(STATUS "File ${PACKAGESOURCE} exists")
-	file(STRINGS ${PACKAGESOURCE} ADDITIONAL_PREFIX_PATH)
-	foreach(PREFIX_PATH_ENTRY ${ADDITIONAL_PREFIX_PATH})
-		message(STATUS "Adding ${PREFIX_PATH_ENTRY} to CMAKE_PREFIX_PATH")
-		list(APPEND CMAKE_PREFIX_PATH "${PREFIX_PATH_ENTRY}")
-	endforeach()
+set(PACKAGESOURCE
+    "${CMAKE_CURRENT_SOURCE_DIR}/vendor/.packages/cmake_prefix_path")
+if(EXISTS ${PACKAGESOURCE})
+  message(STATUS "File ${PACKAGESOURCE} exists")
+  file(STRINGS ${PACKAGESOURCE} ADDITIONAL_PREFIX_PATH)
+  foreach(PREFIX_PATH_ENTRY ${ADDITIONAL_PREFIX_PATH})
+    message(STATUS "Adding ${PREFIX_PATH_ENTRY} to CMAKE_PREFIX_PATH")
+    list(APPEND CMAKE_PREFIX_PATH "${PREFIX_PATH_ENTRY}")
+  endforeach()
 endif()
 
 find_program(MOLD_PROGRAM mold)
@@ -24,7 +25,7 @@ set(hotreloaded_source_files # src/tesselator.cppm
     src/lib/std_arraylike_container.cppm
     src/lib/is_instance.cppm
     src/allocators/allocator.cppm
-	src/allocators/arena.cppm
+    src/allocators/arena.cppm
     src/lib/slice.cppm
     src/lib/opt.cppm
     src/lib/res.cppm
@@ -67,15 +68,21 @@ set_target_properties(
 
 target_include_directories(${PROJECT_NAME}_lib PRIVATE ${werms_include_dirs})
 
-find_package(box2d REQUIRED)
-find_package(SDL3 REQUIRED)
+find_package(box2d REQUIRED NO_CMAKE_SYSTEM_PATH)
+find_package(SDL3 REQUIRED NO_CMAKE_SYSTEM_PATH)
+find_package(glaze REQUIRED NO_CMAKE_SYSTEM_PATH)
+find_package(imgui REQUIRED NO_CMAKE_SYSTEM_PATH)
+find_package(fmt REQUIRED NO_CMAKE_SYSTEM_PATH)
 find_package(Vulkan REQUIRED)
-find_package(glaze REQUIRED)
-find_package(imgui REQUIRED)
-find_package(fmt REQUIRED)
 
 # main needs sdl and imgui because those have some static/global initialization
 # that needs to stick around
 target_link_libraries(${PROJECT_NAME} SDL3::SDL3 imgui::imgui fmt::fmt)
-target_link_libraries(${PROJECT_NAME}_lib box2d::box2d SDL3::SDL3
-                      Vulkan::Vulkan glaze::glaze imgui::imgui fmt::fmt)
+target_link_libraries(
+  ${PROJECT_NAME}_lib
+  box2d::box2d
+  SDL3::SDL3
+  Vulkan::Vulkan
+  glaze::glaze
+  imgui::imgui
+  fmt::fmt)
