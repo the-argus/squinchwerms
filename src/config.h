@@ -4,7 +4,7 @@
 #if defined(__linux__)
 #define DLL_EXT "so"
 #elif defined(__APPLE__)
-#define DLL_EXT "dynlib"
+#define DLL_EXT "dylib"
 #else
 #define DLL_EXT "dll"
 #endif
