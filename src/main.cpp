@@ -260,7 +260,7 @@ SDL_AppResult SDL_AppInit(void **appstatePointer, int argc, char *argv[])
                         "Couldn't create window/renderer: %s", SDL_GetError());
         return SDL_APP_FAILURE;
     }
-    SDL_SetRenderLogicalPresentation(renderer, 640, 480,
+    SDL_SetRenderLogicalPresentation(renderer, render_size[0], render_size[1],
                                      SDL_LOGICAL_PRESENTATION_LETTERBOX);
 
     float mainScale = SDL_GetDisplayContentScale(SDL_GetPrimaryDisplay());

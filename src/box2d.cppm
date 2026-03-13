@@ -38,6 +38,16 @@ getDataBufferHelper(Allocator &allocator, IDType id,
 
 export namespace b2 {
 using Vec2 = b2Vec2;
+struct Vec2I32
+{
+    i32 x = 0;
+    i32 y = 0;
+};
+struct Vec2U32
+{
+    u32 x = 0;
+    u32 y = 0;
+};
 using Segment = b2Segment;
 using Capsule = b2Capsule;
 using Circle = b2Circle;
