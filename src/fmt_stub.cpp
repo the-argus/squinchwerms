@@ -11,6 +11,6 @@ namespace stub {
 // not finding operator- for std::chrono::duration.
 void printNow() noexcept
 {
-    fmt::println(stdout, "[{:%H:%M:%S}]", std::chrono::system_clock::now());
+    fmt::v12::println(stdout, "[{:%H:%M:%S}]", std::chrono::system_clock::now());
 }
 } // namespace stub
