@@ -28,6 +28,7 @@ set(hotreloaded_source_files # src/tesselator.cppm
     src/allocators/arena.cppm
     src/lib/slice.cppm
     src/lib/opt.cppm
+    src/lib/reflection.cppm
     src/lib/res.cppm
     src/library_entry.cppm
     src/box2d.cppm

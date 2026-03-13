@@ -8,6 +8,7 @@ import logging;
 import opt;
 import box2d;
 import aliases;
+import reflection;
 
 struct Context
 {
@@ -22,6 +23,8 @@ extern "C"
     // future calls
     void *init()
     {
+        tests::reflection();
+
         lg::info(lg::Category::Gameplay, "gamelib init() called");
         return new Context;
     }
