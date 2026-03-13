@@ -7,6 +7,7 @@ enum class LoggingCategory
     Physics,
     Gameplay,
     Hotreload,
+    Serialization,
 };
 
 constexpr const char *loggingCategoryToString(LoggingCategory category)
@@ -20,6 +21,8 @@ constexpr const char *loggingCategoryToString(LoggingCategory category)
         return "Physics";
     case LoggingCategory::Renderer:
         return "Renderer";
+    case LoggingCategory::Serialization:
+        return "Serialization";
     }
     return "Unknown Category";
 }

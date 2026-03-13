@@ -2,6 +2,7 @@ module;
 
 #include "macros.h"
 #include <glaze/glaze.hpp>
+#include <string_view>
 
 export module reflection;
 
@@ -11,6 +12,16 @@ export enum class VisitorControlFlow {
     Continue,
     Break,
 };
+
+export template <typename T> constexpr std::string_view typeName() NOEXCEPT
+{
+    return glz::type_name<T>;
+}
+
+export template <typename T> constexpr u64 typeHash() NOEXCEPT
+{
+    return std::hash<std::string_view>{}(typeName<T>());
+}
 
 export template <typename Struct, typename Callable>
 constexpr void forEachStructMember(Struct &&value, Callable &&callable) NOEXCEPT
@@ -56,6 +67,7 @@ constexpr void forEachStructMember(Struct &&value, Callable &&callable) NOEXCEPT
 export template <typename Struct>
 constexpr size_t structMemberCount = glz::reflect<Struct>::size;
 
+namespace refl {
 struct TestStruct
 {
     i32 i = 0;
@@ -118,7 +130,8 @@ void testForEachStructMember()
     w_assert(memberCount == structMemberCount<TestStruct>, "");
     w_assert((test == TestStruct{{}, {}}), "");
 }
+} // namespace refl
 
 export namespace tests {
-void reflection() { testForEachStructMember(); }
+void reflection() { refl::testForEachStructMember(); }
 } // namespace tests

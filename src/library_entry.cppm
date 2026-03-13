@@ -9,6 +9,7 @@ import opt;
 import box2d;
 import aliases;
 import reflection;
+import json;
 
 struct Context
 {
@@ -24,6 +25,7 @@ extern "C"
     void *init()
     {
         tests::reflection();
+        tests::json();
 
         lg::info(lg::Category::Gameplay, "gamelib init() called");
         return new Context;

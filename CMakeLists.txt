@@ -26,6 +26,7 @@ set(hotreloaded_source_files # src/tesselator.cppm
     src/lib/is_instance.cppm
     src/allocators/allocator.cppm
     src/allocators/arena.cppm
+    src/lib/json.cppm
     src/lib/slice.cppm
     src/lib/opt.cppm
     src/lib/reflection.cppm
