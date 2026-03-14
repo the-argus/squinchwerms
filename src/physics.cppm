@@ -15,9 +15,16 @@ import allocator;
 
 export using Vec2 = b2::Vec2;
 export using AABB = b2::AABB;
+export using MassData = b2::MassData;
 export using Rotation = b2::Rotation;
 export using Transform = b2::Transform;
 export using BodyType = b2::BodyType;
+export using ShapeType = b2::ShapeType;
+export using Circle = b2::Circle;
+export using Capsule = b2::Capsule;
+export using Segment = b2::Segment;
+export using ChainSegment = b2::ChainSegment;
+export using Polygon = b2::Polygon;
 
 template <bool isConst> class WorldImpl;
 template <bool isConst> class BodyImpl;
@@ -49,7 +56,223 @@ template <bool isConst> class ShapeImpl
         b2::destroyShape(id, updateBodyMass);
     }
 
-    
+    [[nodiscard]] bool isValid() const NOEXCEPT { return b2::shapeIsValid(id); }
+    explicit operator bool() const NOEXCEPT { return isValid(); }
+
+    [[nodiscard]] ShapeType type() const NOEXCEPT
+    {
+        return b2::shapeGetType(id);
+    }
+
+    [[nodiscard]] BodyImpl<isConst> body() const NOEXCEPT
+    {
+        return b2::shapeGetBody(id);
+    }
+
+    [[nodiscard]] WorldImpl<isConst> world() const NOEXCEPT
+    {
+        return b2::shapeGetWorld(id);
+    }
+
+    [[nodiscard]] bool isSensor() const NOEXCEPT
+    {
+        return b2::shapeIsSensor(id);
+    }
+
+    ShapeImpl setUserData(void *newUserData) const NOEXCEPT
+        requires(not isConst)
+    {
+        b2::shapeSetUserData(id, newUserData);
+        return *this;
+    }
+
+    [[nodiscard]] void *userData() const NOEXCEPT
+    {
+        return b2::shapeGetUserData(id);
+    }
+
+    ShapeImpl setDensity(f32 newDensity,
+                         bool updateBodyMass = true) const NOEXCEPT
+        requires(not isConst)
+    {
+        b2::shapeSetDensity(id, newDensity, updateBodyMass);
+        return *this;
+    }
+
+    [[nodiscard]] f32 density() const NOEXCEPT
+    {
+        return b2::shapeGetDensity(id);
+    }
+
+    ShapeImpl setFriction(f32 newFriction) const NOEXCEPT
+        requires(not isConst)
+    {
+        b2::shapeSetFriction(id, newFriction);
+        return *this;
+    }
+
+    [[nodiscard]] f32 friction() const NOEXCEPT
+    {
+        return b2::shapeGetFriction(id);
+    }
+
+    ShapeImpl setRestitution(f32 newRestitution) const NOEXCEPT
+        requires(not isConst)
+    {
+        b2::shapeSetRestitution(id, newRestitution);
+        return *this;
+    }
+
+    [[nodiscard]] f32 restitution() const NOEXCEPT
+    {
+        return b2::shapeGetRestitution(id);
+    }
+
+    ShapeImpl setMaterial(i32 newMaterial) const NOEXCEPT
+        requires(not isConst)
+    {
+        b2::shapeSetMaterial(id, newMaterial);
+        return *this;
+    }
+
+    [[nodiscard]] i32 material() const NOEXCEPT
+    {
+        return b2::shapeGetMaterial(id);
+    }
+
+    ShapeImpl setSurfaceMaterial(b2::SurfaceMaterial newMaterial) const NOEXCEPT
+        requires(not isConst)
+    {
+        b2::shapeSetSurfaceMaterial(id, newMaterial);
+        return *this;
+    }
+
+    [[nodiscard]] b2::SurfaceMaterial surfaceMaterial() const NOEXCEPT
+    {
+        return b2::shapeGetSurfaceMaterial(id);
+    }
+
+    ShapeImpl setFilter(b2::Filter newFilter) const NOEXCEPT
+        requires(not isConst)
+    {
+        b2::shapeSetFilter(id, newFilter);
+        return *this;
+    }
+
+    [[nodiscard]] b2::Filter filter() const NOEXCEPT
+    {
+        return b2::shapeGetFilter(id);
+    }
+
+    ShapeImpl setSensorEventsAreEnabled(bool newAreEnabled) const NOEXCEPT
+        requires(not isConst)
+    {
+        b2::shapeEnableSensorEvents(id, newAreEnabled);
+        return *this;
+    }
+
+    [[nodiscard]] bool areSensorEventsEnabled() const NOEXCEPT
+    {
+        return b2::shapeAreSensorEventsEnabled(id);
+    }
+
+    ShapeImpl setContactEventsAreEnabled(bool newAreEnabled) const NOEXCEPT
+        requires(not isConst)
+    {
+        b2::shapeEnableContactEvents(id, newAreEnabled);
+        return *this;
+    }
+
+    [[nodiscard]] bool areContactEventsEnabled() const NOEXCEPT
+    {
+        return b2::shapeAreContactEventsEnabled(id);
+    }
+
+    ShapeImpl setPreSolveEventsAreEnabled(bool newAreEnabled) const NOEXCEPT
+        requires(not isConst)
+    {
+        b2::shapeEnablePreSolveEvents(id, newAreEnabled);
+        return *this;
+    }
+
+    [[nodiscard]] bool arePreSolveEventsEnabled() const NOEXCEPT
+    {
+        return b2::shapeArePreSolveEventsEnabled(id);
+    }
+
+    ShapeImpl setHitEventsAreEnabled(bool newAreEnabled) const NOEXCEPT
+        requires(not isConst)
+    {
+        b2::shapeEnableHitEvents(id, newAreEnabled);
+        return *this;
+    }
+
+    [[nodiscard]] bool areHitEventsEnabled() const NOEXCEPT
+    {
+        return b2::shapeAreHitEventsEnabled(id);
+    }
+
+    [[nodiscard]] b2::CastOutput raycast(const b2::RayCastInput &input) NOEXCEPT
+    {
+        return b2::shapeRayCast(id, input);
+    }
+
+    ShapeImpl setCircle(const Circle &circle) const NOEXCEPT
+        requires(not isConst)
+    {
+        b2::shapeSetCircle(id, circle);
+        return *this;
+    }
+
+    ShapeImpl setCapsule(const Capsule &capsule) const NOEXCEPT
+        requires(not isConst)
+    {
+        b2::shapeSetCapsule(id, capsule);
+        return *this;
+    }
+
+    ShapeImpl setSegment(const Segment &segment) const NOEXCEPT
+        requires(not isConst)
+    {
+        b2::shapeSetSegment(id, segment);
+        return *this;
+    }
+
+    ShapeImpl setPolygon(const Polygon &polygon) const NOEXCEPT
+        requires(not isConst)
+    {
+        b2::shapeSetPolygon(id, polygon);
+        return *this;
+    }
+
+    [[nodiscard]] b2::ChainID parentChain() const NOEXCEPT
+    {
+        return b2::shapeGetParentChain(id);
+    }
+
+    [[nodiscard]] AABB aabb() const NOEXCEPT { return b2::shapeGetAABB(id); }
+
+    [[nodiscard]] MassData massData() const NOEXCEPT
+    {
+        return b2::shapeGetMassData(id);
+    }
+
+    [[nodiscard]] Vec2 closestPointTo(Vec2 worldPoint) NOEXCEPT
+    {
+        return b2::shapeGetClosestPoint(id, worldPoint);
+    }
+
+    [[nodiscard]] Res<Slice<b2::ShapeID>, alloc::Error>
+    overlappingShapes(Allocator &allocator) const NOEXCEPT
+    {
+        return b2::shapeSensorGetOverlappingShapes(allocator, id);
+    }
+
+    [[nodiscard]] Res<Slice<b2::ContactData>, alloc::Error>
+    contactData(Allocator &allocator) const NOEXCEPT
+    {
+        return b2::shapeGetContactData(allocator, id);
+    }
 };
 
 template <bool isConst> class BodyImpl
@@ -136,6 +359,7 @@ template <bool isConst> class BodyImpl
   public:
     friend class BodyImpl<not isConst>;
     template <bool worldConst> friend class WorldImpl;
+    template <bool shapeConst> friend class ShapeImpl;
 
     BodyImpl() = delete;
 
@@ -555,6 +779,8 @@ template <bool isConst> class WorldImpl
 
   public:
     friend class WorldImpl<not isConst>;
+    template <bool bodyConst> friend class BodyImpl;
+    template <bool shapeConst> friend class ShapeImpl;
 
     WorldImpl() = delete;
 
