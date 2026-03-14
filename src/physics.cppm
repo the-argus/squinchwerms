@@ -633,7 +633,7 @@ template <bool isConst> class WorldImpl
         return WorldImpl(b2::createWorld(definition));
     }
 
-    Body createBody(const Options &options) NOEXCEPT
+    Body createBody(const Body::Options &options) const NOEXCEPT
         requires(not isConst)
     {
         b2::BodyDef definition;
@@ -817,3 +817,6 @@ template <bool isConst> class WorldImpl
         b2::worldStep(id, timeStep, subStepCount);
     }
 };
+
+export using World = WorldImpl<false>;
+export using WorldConst = WorldImpl<true>;

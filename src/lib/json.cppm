@@ -100,15 +100,11 @@ void testJsonWriteToBufferWithPointer()
     std::array<char, 500> buf = {};
     Res bytes = writeJsonToBuffer(withPointer, buf);
     w_assert(isSuccess(bytes), "");
-    lg::print("with pointer, when non-null: {}",
-              bytes->uncheckedAddressOfFirstItem());
 
     withPointer.testPointer = nullptr;
     buf = {};
     Res bytes2 = writeJsonToBuffer(withPointer, buf);
     w_assert(isSuccess(bytes2), "");
-    lg::print("with pointer, when null: {}",
-              bytes2->uncheckedAddressOfFirstItem());
 
     Res bytes3 = writeJsonToBuffer(a, buf);
     w_assert(isSuccess(bytes3), "");

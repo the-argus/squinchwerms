@@ -6,15 +6,16 @@ export module entry;
 import main_menu;
 import logging;
 import opt;
-import box2d;
+import physics;
 import aliases;
 import reflection;
 import json;
+import box2d;
 
 struct Context
 {
-    b2::WorldID world;
-    b2::BodyID floor;
+    World world;
+    Body floor;
     Opt<b2::Vec2U32> windowSize{}; // changes on events
 };
 
@@ -28,7 +29,15 @@ extern "C"
         tests::json();
 
         lg::info(lg::Category::Gameplay, "gamelib init() called");
-        return new Context;
+        const auto world = World::createWorld({});
+        return new Context{
+            .world = world,
+            .floor = world.createBody({
+                .type = BodyType::Static,
+                .position = Vec2{.x = 0, .y = -10},
+                .name = "floor",
+            }),
+        };
     }
 
     void onHotReload(const hotreload::GlobalContext *context)
