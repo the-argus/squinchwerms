@@ -51,11 +51,17 @@ struct Vec2U32
 using Segment = b2Segment;
 using Capsule = b2Capsule;
 using Circle = b2Circle;
+using ChainSegment = b2ChainSegment;
+using Polygon = b2Polygon;
 using AABB = b2AABB;
 using ContactData = b2ContactData;
 using MassData = b2MassData;
 using Transform = b2Transform;
 using Rotation = b2Rot;
+using SurfaceMaterial = b2SurfaceMaterial;
+using Filter = b2Filter;
+using CastOutput = b2CastOutput;
+using RayCastInput = b2RayCastInput;
 
 constexpr Rotation rotationIdentity = {1.0f, 0.0f};
 
@@ -69,10 +75,25 @@ enum class BodyType
     Dynamic = 2,
 };
 
+enum class ShapeType
+{
+    /// A circle with an offset
+    Circle,
+    /// A capsule is an extruded circle
+    Capsule,
+    /// A line segment
+    Segment,
+    /// A convex polygon
+    Polygon,
+    /// A line segment owned by a chain shape
+    ChainSegmentShape,
+};
+
 using BodyID = b2BodyId;
 using ShapeID = b2ShapeId;
 using WorldID = b2WorldId;
 using JointID = b2JointId;
+using ChainID = b2ChainId;
 
 struct BodyDef : public b2BodyDef
 {
@@ -519,6 +540,231 @@ void bodyDisable(BodyID body) NOEXCEPT { b2Body_Disable(body); }
 [[nodiscard]] bool bodyIsEnabled(BodyID body) NOEXCEPT
 {
     return b2::bodyIsEnabled(body);
+}
+
+// shape ----------------------------------------------------------------------
+[[nodiscard]] bool shapeIsValid(ShapeID id) NOEXCEPT
+{
+    return b2Shape_IsValid(id);
+}
+
+[[nodiscard]] ShapeType shapeGetType(ShapeID id) NOEXCEPT
+{
+    return static_cast<ShapeType>(b2Shape_GetType(id));
+}
+
+[[nodiscard]] BodyID shapeGetBody(ShapeID id) NOEXCEPT
+{
+    return b2Shape_GetBody(id);
+}
+
+[[nodiscard]] WorldID shapeGetWorld(ShapeID id) NOEXCEPT
+{
+    return b2Shape_GetWorld(id);
+}
+
+[[nodiscard]] bool shapeIsSensor(ShapeID id) NOEXCEPT
+{
+    return b2Shape_IsSensor(id);
+}
+
+void shapeSetUserData(ShapeID id, void *newUserData) NOEXCEPT
+{
+    b2Shape_SetUserData(id, newUserData);
+}
+
+[[nodiscard]] void *shapeGetUserData(ShapeID id) NOEXCEPT
+{
+    return b2Shape_GetUserData(id);
+}
+
+void shapeSetDensity(ShapeID id, f32 newDensity, bool updateBodyMass) NOEXCEPT
+{
+    b2Shape_SetDensity(id, newDensity, updateBodyMass);
+}
+
+[[nodiscard]] f32 shapeGetDensity(ShapeID id) NOEXCEPT
+{
+    return b2Shape_GetDensity(id);
+}
+
+void shapeSetFriction(ShapeID id, f32 newFriction) NOEXCEPT
+{
+    b2Shape_SetFriction(id, newFriction);
+}
+
+[[nodiscard]] f32 shapeGetFriction(ShapeID id) NOEXCEPT
+{
+    return b2Shape_GetFriction(id);
+}
+
+void shapeSetRestitution(ShapeID id, f32 newRestitution) NOEXCEPT
+{
+    b2Shape_SetRestitution(id, newRestitution);
+}
+
+[[nodiscard]] f32 shapeGetRestitution(ShapeID id) NOEXCEPT
+{
+    return b2Shape_GetRestitution(id);
+}
+
+void shapeSetMaterial(ShapeID id, i32 newMaterial) NOEXCEPT
+{
+    b2Shape_SetMaterial(id, newMaterial);
+}
+
+[[nodiscard]] i32 shapeGetMaterial(ShapeID id) NOEXCEPT
+{
+    return b2Shape_GetMaterial(id);
+}
+
+void shapeSetSurfaceMaterial(ShapeID id,
+                             const SurfaceMaterial &newMaterial) NOEXCEPT
+{
+    b2Shape_SetSurfaceMaterial(id, newMaterial);
+}
+
+[[nodiscard]] SurfaceMaterial shapeGetSurfaceMaterial(ShapeID id) NOEXCEPT
+{
+    return b2Shape_GetSurfaceMaterial(id);
+}
+
+void shapeSetFilter(ShapeID id, Filter filter) NOEXCEPT
+{
+    b2Shape_SetFilter(id, filter);
+}
+
+[[nodiscard]] Filter shapeGetFilter(ShapeID id) NOEXCEPT
+{
+    return b2Shape_GetFilter(id);
+}
+
+void shapeEnableSensorEvents(ShapeID id,
+                             bool newAreSensorEventsEnabled) NOEXCEPT
+{
+    b2Shape_EnableSensorEvents(id, newAreSensorEventsEnabled);
+}
+
+[[nodiscard]] bool shapeAreSensorEventsEnabled(ShapeID id) NOEXCEPT
+{
+    return b2Shape_AreSensorEventsEnabled(id);
+}
+
+void shapeEnableContactEvents(ShapeID id,
+                              bool newAreContactEventsEnabled) NOEXCEPT
+{
+    b2Shape_EnableContactEvents(id, newAreContactEventsEnabled);
+}
+
+[[nodiscard]] bool shapeAreContactEventsEnabled(ShapeID id) NOEXCEPT
+{
+    return b2Shape_AreContactEventsEnabled(id);
+}
+
+void shapeEnablePreSolveEvents(ShapeID id,
+                               bool newArePreSolveEventsEnabled) NOEXCEPT
+{
+    b2Shape_EnablePreSolveEvents(id, newArePreSolveEventsEnabled);
+}
+
+[[nodiscard]] bool shapeArePreSolveEventsEnabled(ShapeID id) NOEXCEPT
+{
+    return b2Shape_ArePreSolveEventsEnabled(id);
+}
+
+void shapeEnableHitEvents(ShapeID id, bool newAreHitEventsEnabled) NOEXCEPT
+{
+    b2Shape_EnableHitEvents(id, newAreHitEventsEnabled);
+}
+
+[[nodiscard]] bool shapeAreHitEventsEnabled(ShapeID id) NOEXCEPT
+{
+    return b2Shape_AreHitEventsEnabled(id);
+}
+
+[[nodiscard]] CastOutput shapeRayCast(ShapeID id,
+                                      const RayCastInput &input) NOEXCEPT
+{
+    return b2Shape_RayCast(id, &input);
+}
+
+void shapeSetCircle(ShapeID id, const Circle &circle) NOEXCEPT
+{
+    b2Shape_SetCircle(id, &circle);
+}
+
+void shapeSetCapsule(ShapeID id, const Capsule &capsule) NOEXCEPT
+{
+    b2Shape_SetCapsule(id, &capsule);
+}
+
+void shapeSetSegment(ShapeID id, const Segment &segment) NOEXCEPT
+{
+    b2Shape_SetSegment(id, &segment);
+}
+
+void shapeSetPolygon(ShapeID id, const Polygon &polygon) NOEXCEPT
+{
+    b2Shape_SetPolygon(id, &polygon);
+}
+
+[[nodiscard]] ChainID shapeGetParentChain(ShapeID id) NOEXCEPT
+{
+    return b2Shape_GetParentChain(id);
+}
+
+[[nodiscard]] AABB shapeGetAABB(ShapeID id) NOEXCEPT
+{
+    return b2Shape_GetAABB(id);
+}
+
+[[nodiscard]] MassData shapeGetMassData(ShapeID id) NOEXCEPT
+{
+    return b2Shape_GetMassData(id);
+}
+
+[[nodiscard]] Vec2 shapeGetClosestPoint(ShapeID id, Vec2 worldPoint) NOEXCEPT
+{
+    return b2Shape_GetClosestPoint(id, worldPoint);
+}
+
+[[nodiscard]] u32 shapeGetContactCapacity(ShapeID id) NOEXCEPT
+{
+    return static_cast<u32>(b2Shape_GetContactCapacity(id));
+}
+
+[[nodiscard]] u32 shapeSensorGetNumOverlappingShapes(ShapeID sensor) NOEXCEPT
+{
+    return static_cast<u32>(b2Shape_GetSensorCapacity(sensor));
+}
+
+[[nodiscard]] int shapeGetContactDataUnsafe(ShapeID id,
+                                            ContactData *contactData,
+                                            u32 capacity) NOEXCEPT
+{
+    return b2Shape_GetContactData(id, contactData, static_cast<int>(capacity));
+}
+
+[[nodiscard]] int shapeSensorGetOverlappingShapesUnsafe(ShapeID id,
+                                                        ShapeID *overlaps,
+                                                        u32 capacity) NOEXCEPT
+{
+    return b2Shape_GetSensorOverlaps(id, overlaps, static_cast<int>(capacity));
+}
+
+[[nodiscard]] Res<Slice<ContactData>, alloc::Error>
+shapeGetContactData(Allocator &allocator, ShapeID shape) NOEXCEPT
+{
+    return getDataBufferHelper<ContactData>(
+        allocator, shape, shapeGetContactCapacity, shapeGetContactDataUnsafe);
+}
+
+[[nodiscard]] Res<Slice<ShapeID>, alloc::Error>
+shapeSensorGetOverlappingShapes(Allocator &allocator, ShapeID sensor) NOEXCEPT
+{
+    return getDataBufferHelper<ShapeID>(allocator, sensor,
+                                        shapeSensorGetNumOverlappingShapes,
+                                        shapeSensorGetOverlappingShapesUnsafe);
 }
 
 } // namespace b2

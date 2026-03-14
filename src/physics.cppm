@@ -20,6 +20,37 @@ export using Transform = b2::Transform;
 export using BodyType = b2::BodyType;
 
 template <bool isConst> class WorldImpl;
+template <bool isConst> class BodyImpl;
+
+template <bool isConst> class ShapeImpl
+{
+  private:
+    b2::ShapeID id;
+
+    ShapeImpl(b2::ShapeID _id) NOEXCEPT : id(_id) {}
+
+  public:
+    template <bool bodyConst> friend class BodyImpl;
+    friend class ShapeImpl<not isConst>;
+
+    ShapeImpl() = delete;
+
+    constexpr operator b2::ShapeID() const NOEXCEPT { return id; }
+
+    constexpr operator ShapeImpl<true>() const NOEXCEPT
+        requires(not isConst)
+    {
+        return ShapeImpl<true>(id);
+    }
+
+    void destroy(bool updateBodyMass = true) const NOEXCEPT
+        requires(not isConst)
+    {
+        b2::destroyShape(id, updateBodyMass);
+    }
+
+    
+};
 
 template <bool isConst> class BodyImpl
 {
@@ -526,6 +557,14 @@ template <bool isConst> class WorldImpl
     friend class WorldImpl<not isConst>;
 
     WorldImpl() = delete;
+
+    constexpr operator b2::WorldID() const NOEXCEPT { return id; }
+
+    constexpr operator WorldImpl<true>() const NOEXCEPT
+        requires(not isConst)
+    {
+        return WorldImpl<true>(id);
+    }
 
     struct Options
     {
