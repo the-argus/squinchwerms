@@ -76,6 +76,12 @@ struct TestStruct
     f32 f;
 };
 
+struct TestWithPointer
+{
+    i32 i;
+    TestStruct *testPointer;
+};
+
 void testJsonWriteToBuffer()
 {
     TestStruct test{1, 2.0f};
@@ -84,6 +90,28 @@ void testJsonWriteToBuffer()
     Res bytes = writeJsonToBuffer(test, buf);
 
     w_assert(isSuccess(bytes), "");
+}
+
+void testJsonWriteToBufferWithPointer()
+{
+    TestStruct a{3, 2};
+    TestWithPointer withPointer{30, &a};
+
+    std::array<char, 500> buf = {};
+    Res bytes = writeJsonToBuffer(withPointer, buf);
+    w_assert(isSuccess(bytes), "");
+    lg::print("with pointer, when non-null: {}",
+              bytes->uncheckedAddressOfFirstItem());
+
+    withPointer.testPointer = nullptr;
+    buf = {};
+    Res bytes2 = writeJsonToBuffer(withPointer, buf);
+    w_assert(isSuccess(bytes2), "");
+    lg::print("with pointer, when null: {}",
+              bytes2->uncheckedAddressOfFirstItem());
+
+    Res bytes3 = writeJsonToBuffer(a, buf);
+    w_assert(isSuccess(bytes3), "");
 }
 
 void testJsonWriteToFile()
@@ -104,5 +132,6 @@ void json()
 {
     json::testJsonWriteToBuffer();
     json::testJsonWriteToFile();
+    json::testJsonWriteToBufferWithPointer();
 }
 } // namespace tests
