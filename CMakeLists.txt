@@ -33,6 +33,7 @@ set(hotreloaded_source_files # src/tesselator.cppm
     src/lib/res.cppm
     src/library_entry.cppm
     src/box2d.cppm
+    src/physics.cppm
     src/main_menu.cppm
     src/logging.cppm)
 set(werms_include_dirs src/)

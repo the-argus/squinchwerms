@@ -57,6 +57,8 @@ using MassData = b2MassData;
 using Transform = b2Transform;
 using Rotation = b2Rot;
 
+constexpr Rotation rotationIdentity = {1.0f, 0.0f};
+
 enum class BodyType
 {
     /// zero mass, zero velocity, may be manually moved
