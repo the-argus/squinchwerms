@@ -2,6 +2,8 @@ module;
 
 #include "macros.h"
 
+#include <utility>
+
 export module physics;
 
 import box2d;
@@ -25,9 +27,71 @@ export using Capsule = b2::Capsule;
 export using Segment = b2::Segment;
 export using ChainSegment = b2::ChainSegment;
 export using Polygon = b2::Polygon;
+export using ContactData = b2::ContactData;
+export using PhysicsSurfaceMaterial = b2::SurfaceMaterial;
+export using PhysicsFilter = b2::Filter;
+export using PhysicsQueryFilter = b2::QueryFilter;
+export using PhysicsDirectShapeRaycastOutput = b2::CastOutput;
+export using PhysicsRaycastInput = b2::RayCastInput;
+export using PhysicsFrictionCallback = b2::FrictionCallback;
+export using PhysicsRestitutionCallback = b2::RestitutionCallback;
+export using PhysicsRaycastResultFunction = b2::CastResultFunction;
+export using PhysicsTreeStats = b2::TreeStats;
+export using PhysicsContactTuningOptions = b2::ContactTuningOptions;
 
 template <bool isConst> class WorldImpl;
 template <bool isConst> class BodyImpl;
+template <bool isConst> class ShapeImpl;
+
+export template <bool isConst> struct PhysicsRaycastResult
+{
+    ShapeImpl<isConst> shapeId;
+    Vec2 point = {};
+    Vec2 normal = {};
+    f32 fraction = 1.0;
+    bool hit = false;
+};
+
+template <bool isConst>
+constexpr auto castShapeIDToShape = [](Slice<b2::ShapeID> shapeIDs) {
+    return reinterpretBytesAs<ShapeImpl<isConst>>(reinterpretAsBytes(shapeIDs));
+};
+
+/// Helper to assign the struct of optional overrides to actual shape / body /
+/// world defs
+template <size_t index> constexpr void assignIfNonNull(auto &lhs, auto &rhs)
+{
+    using LHS = std::remove_cvref_t<decltype(lhs)>;
+    using RHS = std::remove_cvref_t<decltype(rhs)>;
+    static_assert(
+        IsInstance<std::remove_cvref_t<decltype(getMemberAtIndex<index>(rhs))>,
+                   Opt>);
+    static_assert(structMemberCount<LHS> == (structMemberCount<RHS> + 1));
+    if (getMemberAtIndex<index>(rhs)) {
+        using RHSUnwrapped = decltype(getMemberAtIndex<index>(rhs).unwrap());
+        using LHS = decltype(getMemberAtIndex<index>(lhs));
+        if constexpr (std::is_assignable_v<LHS, RHSUnwrapped>) {
+            getMemberAtIndex<index>(lhs) =
+                getMemberAtIndex<index>(rhs).unwrap();
+        } else {
+            static_assert(std::is_enum_v<std::remove_cvref_t<LHS>>);
+            static_assert(std::is_enum_v<std::remove_cvref_t<RHSUnwrapped>>);
+            getMemberAtIndex<index>(lhs) =
+                static_cast<std::remove_cvref_t<LHS>>(
+                    getMemberAtIndex<index>(rhs).unwrap());
+        }
+    }
+};
+
+template <typename Box2DDef, typename OptionsStruct>
+constexpr void assignDefFromOptions(Box2DDef &lhs,
+                                    const OptionsStruct &rhs) NOEXCEPT
+{
+    constexpr u64 N = structMemberCount<OptionsStruct>;
+    [&]<size_t... I>(std::index_sequence<I...>) constexpr {
+        (assignIfNonNull<I>(lhs, rhs), ...);
+    }(std::make_index_sequence<N>{});
+}
 
 template <bool isConst> class ShapeImpl
 {
@@ -49,6 +113,60 @@ template <bool isConst> class ShapeImpl
     {
         return ShapeImpl<true>(id);
     }
+
+    struct Options
+    {
+        /// Use this to store application specific shape data.
+        Opt<void *> userData;
+
+        /// The surface material for this shape.
+        Opt<PhysicsSurfaceMaterial> material;
+
+        /// The density, usually in kg/m^2.
+        /// This is not part of the surface material because this is for the
+        /// interior, which may have other considerations, such as being hollow.
+        /// For example a wood barrel may be hollow or full of water.
+        Opt<f32> density;
+
+        /// Collision filtering data.
+        Opt<PhysicsFilter> filter;
+
+        /// A sensor shape generates overlap events but never generates a
+        /// collision response. Sensors do not have continuous collision.
+        /// Instead, use a ray or shape cast for those scenarios. Sensors still
+        /// contribute to the body mass if they have non-zero density.
+        /// @note Sensor events are disabled by default.
+        /// @see enableSensorEvents
+        Opt<bool> isSensor;
+
+        /// Enable sensor events for this shape. This applies to sensors and
+        /// non-sensors. False by default, even for sensors.
+        Opt<bool> enableSensorEvents;
+
+        /// Enable contact events for this shape. Only applies to kinematic and
+        /// dynamic bodies. Ignored for sensors. False by default.
+        Opt<bool> enableContactEvents;
+
+        /// Enable hit events for this shape. Only applies to kinematic and
+        /// dynamic bodies. Ignored for sensors. False by default.
+        Opt<bool> enableHitEvents;
+
+        /// Enable pre-solve contact events for this shape. Only applies to
+        /// dynamic bodies. These are expensive and must be carefully handled
+        /// due to threading. Ignored for sensors.
+        Opt<bool> enablePreSolveEvents;
+
+        /// When shapes are created they will scan the environment for collision
+        /// the next time step. This can significantly slow down static body
+        /// creation when there are many static shapes. This is flag is ignored
+        /// for dynamic and kinematic shapes which always invoke contact
+        /// creation.
+        Opt<bool> invokeContactCreation;
+
+        /// Should the body update the mass properties when this shape is
+        /// created. Default is true.
+        Opt<bool> updateBodyMass;
+    };
 
     void destroy(bool updateBodyMass = true) const NOEXCEPT
         requires(not isConst)
@@ -140,26 +258,27 @@ template <bool isConst> class ShapeImpl
         return b2::shapeGetMaterial(id);
     }
 
-    ShapeImpl setSurfaceMaterial(b2::SurfaceMaterial newMaterial) const NOEXCEPT
+    ShapeImpl
+    setSurfaceMaterial(PhysicsSurfaceMaterial newMaterial) const NOEXCEPT
         requires(not isConst)
     {
         b2::shapeSetSurfaceMaterial(id, newMaterial);
         return *this;
     }
 
-    [[nodiscard]] b2::SurfaceMaterial surfaceMaterial() const NOEXCEPT
+    [[nodiscard]] PhysicsSurfaceMaterial surfaceMaterial() const NOEXCEPT
     {
         return b2::shapeGetSurfaceMaterial(id);
     }
 
-    ShapeImpl setFilter(b2::Filter newFilter) const NOEXCEPT
+    ShapeImpl setFilter(PhysicsFilter newFilter) const NOEXCEPT
         requires(not isConst)
     {
         b2::shapeSetFilter(id, newFilter);
         return *this;
     }
 
-    [[nodiscard]] b2::Filter filter() const NOEXCEPT
+    [[nodiscard]] PhysicsFilter filter() const NOEXCEPT
     {
         return b2::shapeGetFilter(id);
     }
@@ -212,7 +331,8 @@ template <bool isConst> class ShapeImpl
         return b2::shapeAreHitEventsEnabled(id);
     }
 
-    [[nodiscard]] b2::CastOutput raycast(const b2::RayCastInput &input) NOEXCEPT
+    [[nodiscard]] PhysicsDirectShapeRaycastOutput
+    raycast(const PhysicsRaycastInput &input) NOEXCEPT
     {
         return b2::shapeRayCast(id, input);
     }
@@ -262,18 +382,28 @@ template <bool isConst> class ShapeImpl
         return b2::shapeGetClosestPoint(id, worldPoint);
     }
 
-    [[nodiscard]] Res<Slice<b2::ShapeID>, alloc::Error>
+    /// Allocate a list of the shapes overlapping this shape, if this shape is
+    /// a sensor.
+    /// TODO: maybe this is overly const correct and should just return nonconst
+    /// Shapes
+    [[nodiscard]] Res<Slice<ShapeImpl<isConst>>, alloc::Error>
     overlappingShapes(Allocator &allocator) const NOEXCEPT
     {
-        return b2::shapeSensorGetOverlappingShapes(allocator, id);
+        static_assert(sizeof(b2::ShapeID) == sizeof(ShapeImpl));
+        static_assert(alignof(b2::ShapeID) == alignof(ShapeImpl));
+        return b2::shapeSensorGetOverlappingShapes(allocator, id)
+            .map(castShapeIDToShape<isConst>);
     }
 
-    [[nodiscard]] Res<Slice<b2::ContactData>, alloc::Error>
+    [[nodiscard]] Res<Slice<ContactData>, alloc::Error>
     contactData(Allocator &allocator) const NOEXCEPT
     {
         return b2::shapeGetContactData(allocator, id);
     }
 };
+
+export using Shape = ShapeImpl<false>;
+export using ShapeConst = ShapeImpl<true>;
 
 template <bool isConst> class BodyImpl
 {
@@ -283,22 +413,22 @@ template <bool isConst> class BodyImpl
   public:
     struct Options
     {
-        Opt<b2::BodyType> type;
+        Opt<BodyType> type;
 
         /// The initial world position of the body. Bodies should be created
         /// with the desired position.
         /// @note Creating bodies at the origin and then moving them nearly
         /// doubles the cost of body creation, especially if the body is moved
         /// after shapes have been added.
-        Opt<b2::Vec2> position;
+        Opt<Vec2> position;
 
         /// The initial world rotation of the body. Use b2MakeRot() if you have
         /// an angle.
-        Opt<b2::Rotation> rotation;
+        Opt<Rotation> rotation;
 
         /// The initial linear velocity of the body's origin. Usually in meters
         /// per second.
-        Opt<b2::Vec2> linearVelocity;
+        Opt<Vec2> linearVelocity;
 
         /// The initial angular velocity of the body. Radians per second.
         Opt<f32> angularVelocity;
@@ -324,9 +454,9 @@ template <bool isConst> class BodyImpl
 
         /// Optional body name for debugging. Up to 31 characters (excluding
         /// null termination)
-        const char *name = nullptr;
+        Opt<const char *> name;
 
-        void *userData = nullptr;
+        Opt<void *> userData;
 
         /// Set this flag to false if this body should never fall asleep.
         Opt<bool> enableSleep;
@@ -376,6 +506,38 @@ template <bool isConst> class BodyImpl
         requires(not isConst)
     {
         b2::destroyBody(id);
+    }
+
+    Shape addSegmentShape(const Shape::Options &options,
+                          const Segment &segment) NOEXCEPT
+    {
+        b2::UninitializedShapeDef def = b2::defaultShapeDef();
+        assignDefFromOptions(def, options);
+        return b2::createSegmentShape(id, def, segment);
+    }
+
+    Shape addCapsuleShape(const Shape::Options &options,
+                          const Capsule &capsule) NOEXCEPT
+    {
+        b2::UninitializedShapeDef def = b2::defaultShapeDef();
+        assignDefFromOptions(def, options);
+        return b2::createCapsuleShape(id, def, capsule);
+    }
+
+    Shape addCircleShape(const Shape::Options &options,
+                         const Circle &circle) NOEXCEPT
+    {
+        b2::UninitializedShapeDef def = b2::defaultShapeDef();
+        assignDefFromOptions(def, options);
+        return b2::createCircleShape(id, def, circle);
+    }
+
+    Shape addPolygonShape(const Shape::Options &options,
+                          const Polygon &polygon) NOEXCEPT
+    {
+        b2::UninitializedShapeDef def = b2::defaultShapeDef();
+        assignDefFromOptions(def, options);
+        return b2::createPolygonShape(id, def, polygon);
     }
 
     /// Apply an angular impulse. The impulse is ignored if the body is not
@@ -496,15 +658,15 @@ template <bool isConst> class BodyImpl
     /// Get the touching contact data for a body.
     /// @note Box2D uses speculative collision so some contact points may be
     /// separated.
-    [[nodiscard]] Res<Slice<b2::ContactData>, alloc::Error>
+    [[nodiscard]] Res<Slice<ContactData>, alloc::Error>
     contactData(Allocator &allocator) const NOEXCEPT
     {
         return b2::bodyGetContactData(allocator, id);
     }
 
-    [[nodiscard]] Opt<b2::ContactData> firstContactData() const NOEXCEPT
+    [[nodiscard]] Opt<ContactData> firstContactData() const NOEXCEPT
     {
-        b2::ContactData out;
+        ContactData out;
         const int numWritten = b2::bodyGetContactDataUnsafe(id, &out, 1);
 
         if (numWritten)
@@ -530,13 +692,14 @@ template <bool isConst> class BodyImpl
     }
 
     /// Get the shape ids for all shapes on this body
-    [[nodiscard]] Res<Slice<b2::ShapeID>, alloc::Error>
+    [[nodiscard]] Res<Slice<ShapeImpl<isConst>>, alloc::Error>
     shapes(Allocator &allocator) const NOEXCEPT
     {
-        return b2::bodyGetShapes(allocator, id);
+        return b2::bodyGetShapes(allocator, id)
+            .map(castShapeIDToShape<isConst>);
     }
 
-    [[nodiscard]] Opt<b2::ShapeID> firstShape() const NOEXCEPT
+    [[nodiscard]] Opt<ShapeImpl<isConst>> firstShape() const NOEXCEPT
     {
         b2::ShapeID out;
         const int numWritten = b2::bodyGetShapesUnsafe(id, &out, 1);
@@ -604,7 +767,7 @@ template <bool isConst> class BodyImpl
     }
 
     /// Get the mass data for a body
-    [[nodiscard]] b2::MassData massData() const NOEXCEPT
+    [[nodiscard]] MassData massData() const NOEXCEPT
     {
         return b2::bodyGetMassData(id);
     }
@@ -612,7 +775,7 @@ template <bool isConst> class BodyImpl
     /// Override the body's mass properties. Normally this is computed
     /// automatically using the shape geometry and density. This information is
     /// lost if a shape is added or removed or if the body type changes.
-    BodyImpl setMassData(const b2::MassData &newMassData) const NOEXCEPT
+    BodyImpl setMassData(const MassData &newMassData) const NOEXCEPT
         requires(not isConst)
     {
         return b2::bodySetMassData(id, newMassData);
@@ -823,11 +986,11 @@ template <bool isConst> class WorldImpl
 
         /// Optional mixing callback for friction. The default uses
         /// sqrt(frictionA * frictionB).
-        Opt<b2::FrictionCallback *> frictionCallback;
+        Opt<PhysicsFrictionCallback *> frictionCallback;
 
         /// Optional mixing callback for restitution. The default uses
         /// max(restitutionA, restitutionB).
-        Opt<b2::RestitutionCallback *> restitutionCallback;
+        Opt<PhysicsRestitutionCallback *> restitutionCallback;
 
         /// Can bodies go to sleep to improve performance
         Opt<bool> enableSleep;
@@ -857,86 +1020,16 @@ template <bool isConst> class WorldImpl
 
     static WorldImpl createWorld(const Options &options)
     {
-        b2::WorldDef definition;
-        if (options.gravity)
-            definition.gravity = options.gravity.unwrap();
-        if (options.restitutionThreshold)
-            definition.restitutionThreshold =
-                options.restitutionThreshold.unwrap();
-        if (options.hitEventThreshold)
-            definition.hitEventThreshold = options.hitEventThreshold.unwrap();
-        if (options.contactHertz)
-            definition.contactHertz = options.contactHertz.unwrap();
-        if (options.contactDampingRatio)
-            definition.contactDampingRatio =
-                options.contactDampingRatio.unwrap();
-        if (options.maxContactPushSpeed)
-            definition.maxContactPushSpeed =
-                options.maxContactPushSpeed.unwrap();
-        if (options.maximumLinearSpeed)
-            definition.maximumLinearSpeed = options.maximumLinearSpeed.unwrap();
-        if (options.frictionCallback)
-            definition.frictionCallback = options.frictionCallback.unwrap();
-        if (options.restitutionCallback)
-            definition.restitutionCallback =
-                options.restitutionCallback.unwrap();
-        if (options.enableSleep)
-            definition.enableSleep = options.enableSleep.unwrap();
-        if (options.enableContinuous)
-            definition.enableContinuous = options.enableContinuous.unwrap();
-        if (options.workerCount)
-            definition.workerCount = options.workerCount.unwrap();
-        if (options.enqueueTask)
-            definition.enqueueTask = options.enqueueTask.unwrap();
-        if (options.finishTask)
-            definition.finishTask = options.finishTask.unwrap();
-        if (options.userTaskContext)
-            definition.userTaskContext = options.userTaskContext.unwrap();
-        if (options.userData)
-            definition.userData = options.userData.unwrap();
-
+        b2::UninitializedWorldDef definition = b2::defaultWorldDef();
+        assignDefFromOptions(definition, options);
         return WorldImpl(b2::createWorld(definition));
     }
 
     Body createBody(const Body::Options &options) const NOEXCEPT
         requires(not isConst)
     {
-        b2::BodyDef definition;
-        if (options.type)
-            definition.type =
-                static_cast<decltype(definition.type)>(options.type.unwrap());
-        if (options.position)
-            definition.position = options.position.unwrap();
-        if (options.rotation)
-            definition.rotation = options.rotation.unwrap();
-        if (options.linearVelocity)
-            definition.linearVelocity = options.linearVelocity.unwrap();
-        if (options.angularVelocity)
-            definition.angularVelocity = options.angularVelocity.unwrap();
-        if (options.linearDamping)
-            definition.linearDamping = options.linearDamping.unwrap();
-        if (options.angularDamping)
-            definition.angularDamping = options.angularDamping.unwrap();
-        if (options.gravityScale)
-            definition.gravityScale = options.gravityScale.unwrap();
-        if (options.sleepThreshold)
-            definition.sleepThreshold = options.sleepThreshold.unwrap();
-        if (options.enableSleep)
-            definition.enableSleep = options.enableSleep.unwrap();
-        if (options.isAwake)
-            definition.isAwake = options.isAwake.unwrap();
-        if (options.fixedRotation)
-            definition.fixedRotation = options.fixedRotation.unwrap();
-        if (options.isBullet)
-            definition.isBullet = options.isBullet.unwrap();
-        if (options.isEnabled)
-            definition.isEnabled = options.isEnabled.unwrap();
-        if (options.allowFastRotation)
-            definition.allowFastRotation = options.allowFastRotation.unwrap();
-
-        definition.name = options.name;
-        definition.userData = options.userData;
-
+        b2::UninitializedBodyDef definition = b2::defaultBodyDef();
+        assignDefFromOptions(definition, options);
         return Body(b2::createBody(id, definition));
     }
 
@@ -948,8 +1041,8 @@ template <bool isConst> class WorldImpl
 
     /// Cast a capsule mover through the world. This is a special shape cast
     /// that handles sliding along other shapes while reducing clipping.
-    [[nodiscard]] f32 castMover(const b2::Capsule &mover, Vec2 translation,
-                                b2::QueryFilter filter) const NOEXCEPT
+    [[nodiscard]] f32 castMover(const Capsule &mover, Vec2 translation,
+                                PhysicsQueryFilter filter) const NOEXCEPT
     {
         return b2::worldCastMover(id, mover, translation, filter);
     }
@@ -961,9 +1054,9 @@ template <bool isConst> class WorldImpl
         /// The translation of the ray from the start point to the end point
         Vec2 translation = {};
         /// Contains bit flags to filter unwanted shapes from the results
-        b2::QueryFilter filter = {};
+        PhysicsQueryFilter filter = {};
         /// A user implemented callback function
-        b2::CastResultFunction *fcn = nullptr;
+        PhysicsRaycastResultFunction *fcn = nullptr;
         /// A user context that is passed along to the callback function
         void *context = nullptr;
     };
@@ -973,7 +1066,7 @@ template <bool isConst> class WorldImpl
     /// point, or n-points.
     /// @note The callback function may receive shapes in any order
     ///	@return traversal performance counters
-    [[nodiscard]] b2::TreeStats
+    [[nodiscard]] PhysicsTreeStats
     castRay(const RayCastOptions &options) const NOEXCEPT
     {
         return b2::worldCastRay(id, options.origin, options.translation,
@@ -987,13 +1080,13 @@ template <bool isConst> class WorldImpl
         /// The translation of the ray from the start point to the end point
         Vec2 translation = {};
         /// Contains bit flags to filter unwanted shapes from the results
-        b2::QueryFilter filter = {};
+        PhysicsQueryFilter filter = {};
     };
 
     /// Cast a ray into the world to collect the closest hit. This is a
     /// convenience function. Ignores initial overlap. This is less general than
     /// castRay() and does not allow for custom filtering.
-    [[nodiscard]] b2::RayResult
+    [[nodiscard]] PhysicsRaycastResult<isConst>
     castRayClosest(const RayCastClosestOptions &options) const NOEXCEPT
     {
         b2::worldCastRayClosest(id, options.origin, options.translation,
@@ -1004,15 +1097,15 @@ template <bool isConst> class WorldImpl
     {
         const b2::ShapeProxy *proxy = nullptr;
         Vec2 translation = {};
-        b2::QueryFilter filter = {};
-        b2::CastResultFunction *callback = nullptr;
+        PhysicsQueryFilter filter = {};
+        PhysicsRaycastResultFunction *callback = nullptr;
         void *context = nullptr;
     };
 
     /// Cast a shape through the world. Similar to a cast ray except that a
     /// shape is cast instead of a point.
     ///	@see castRay
-    [[nodiscard]] b2::TreeStats
+    [[nodiscard]] PhysicsTreeStats
     castShape(const ShapeCastOptions &options) const NOEXCEPT
     {
         b2::worldCastShape(id, *options.proxy, options.translation,
@@ -1051,7 +1144,7 @@ template <bool isConst> class WorldImpl
     /// per second)
     /// @note Advanced feature
     WorldImpl
-    setContactTuning(const b2::ContactTuningOptions &options) const NOEXCEPT
+    setContactTuning(const PhysicsContactTuningOptions &options) const NOEXCEPT
         requires(not isConst)
     {
         b2::worldSetContactTuning(id, options);

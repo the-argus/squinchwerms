@@ -16,6 +16,7 @@ struct Context
 {
     World world;
     Body floor;
+    Body square;
     Opt<b2::Vec2U32> windowSize{}; // changes on events
 };
 
@@ -30,14 +31,28 @@ extern "C"
 
         lg::info(lg::Category::Gameplay, "gamelib init() called");
         const auto world = World::createWorld({});
-        return new Context{
-            .world = world,
-            .floor = world.createBody({
-                .type = BodyType::Static,
-                .position = Vec2{.x = 0, .y = -10},
-                .name = "floor",
-            }),
+        auto *out = new Context{.world = world,
+                                .floor = world.createBody({
+                                    .type = BodyType::Static,
+                                    .position = Vec2{.x = 0, .y = -10},
+                                    .name = "floor",
+                                }),
+                                .square = world.createBody({
+                                    .type = BodyType::Kinematic,
+                                    .position = Vec2{.x = 0, .y = 10},
+                                    .name = "square",
+                                })};
+
+        constexpr Polygon squarePolygon = {
+            .vertices = {{-1, 1}, {-1, -1}, {1, -1}, {1, 1}},
+            .normals = {{-1, 0}, {0, -1}, {1, 0}, {0, 1}},
+            .centroid = {},
+            .count = 4,
         };
+        out->square.addPolygonShape({}, squarePolygon);
+        out->floor.addSegmentShape({}, {.point1 = {-10, 0}, .point2 = {10, 0}});
+
+        return out;
     }
 
     void onHotReload(const hotreload::GlobalContext *context)
@@ -52,6 +67,12 @@ extern "C"
     bool frame(void *context, SDL_Renderer *renderer)
     {
         auto *const ctx = static_cast<Context *>(context);
+
+        // TODO: put correct frame timestep here? honestly I'm not sure how
+        // physics process vs. frame process is usually implemented. I guess it
+        // could be an event on a timer? or just force vsync and use frametime
+        // here... but then maybe things become unstable at low framerates
+        ctx->world.step(1.0f / 60.0f);
 
         if (ctx->windowSize) {
             SDL_SetRenderLogicalPresentation(

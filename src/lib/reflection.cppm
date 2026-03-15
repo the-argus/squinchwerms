@@ -23,6 +23,19 @@ export template <typename T> constexpr u64 typeHash() NOEXCEPT
     return std::hash<std::string_view>{}(typeName<T>());
 }
 
+export template <size_t index, typename Struct>
+constexpr decltype(auto) getMemberAtIndex(Struct &&value) NOEXCEPT
+{
+    if constexpr (glz::reflectable<Struct>) {
+        return glz::get_member(
+            std::forward<Struct>(value),
+            glz::get<index>(glz::to_tie(std::forward<Struct>(value))));
+    } else {
+        return glz::get_member(std::forward<Struct>(value),
+                               glz::get<index>(glz::reflect<Struct>::values));
+    }
+}
+
 export template <typename Callable>
 constexpr void forEachStructMember(auto &&value, Callable &&callable) NOEXCEPT
 {
@@ -32,9 +45,7 @@ constexpr void forEachStructMember(auto &&value, Callable &&callable) NOEXCEPT
 
         using ReturnType = decltype(std::invoke(
             std::forward<Callable>(callable),
-            glz::get_member(
-                std::forward<Struct>(value),
-                glz::get<0>(glz::to_tie(std::forward<Struct>(value)))),
+            getMemberAtIndex<0>(std::forward<Struct>(value)),
             glz::member_nameof<0, Struct>));
 
         static_assert(
@@ -44,12 +55,9 @@ constexpr void forEachStructMember(auto &&value, Callable &&callable) NOEXCEPT
 
         if constexpr (std::is_void_v<ReturnType>) {
             [&]<size_t... I>(std::index_sequence<I...>) constexpr {
-                (std::invoke(
-                     std::forward<Callable>(callable),
-                     (glz::get_member(std::forward<Struct>(value),
-                                      glz::get<I>(glz::to_tie(
-                                          std::forward<Struct>(value))))),
-                     glz::member_nameof<I, Struct>),
+                (std::invoke(std::forward<Callable>(callable),
+                             (getMemberAtIndex<I>(std::forward<Struct>(value))),
+                             glz::member_nameof<I, Struct>),
                  ...);
             }(std::make_index_sequence<N>{});
         } else {
@@ -57,9 +65,7 @@ constexpr void forEachStructMember(auto &&value, Callable &&callable) NOEXCEPT
                 const bool broke =
                     ((std::invoke(
                           std::forward<Callable>(callable),
-                          (glz::get_member(std::forward<Struct>(value),
-                                           glz::get<I>(glz::to_tie(
-                                               std::forward<Struct>(value))))),
+                          (getMemberAtIndex<I>(std::forward<Struct>(value))),
                           glz::member_nameof<I, Struct>) ==
                       VisitorControlFlow::Break) ||
                      ...);

@@ -2,6 +2,7 @@ module;
 
 #include "macros.h"
 #include <box2d/box2d.h>
+#include <glaze/glaze.hpp>
 
 export module box2d;
 import aliases;
@@ -95,6 +96,14 @@ using WorldID = b2WorldId;
 using JointID = b2JointId;
 using ChainID = b2ChainId;
 
+using UninitializedBodyDef = b2BodyDef;
+using UninitializedShapeDef = b2ShapeDef;
+using UninitializedWorldDef = b2WorldDef;
+
+UninitializedBodyDef defaultBodyDef() NOEXCEPT { return b2DefaultBodyDef(); }
+UninitializedShapeDef defaultShapeDef() NOEXCEPT { return b2DefaultShapeDef(); }
+UninitializedWorldDef defaultWorldDef() NOEXCEPT { return b2DefaultWorldDef(); }
+
 struct BodyDef : public b2BodyDef
 {
     BodyDef() NOEXCEPT : b2BodyDef(b2DefaultBodyDef()) {}
@@ -136,11 +145,17 @@ struct WorldDef : public b2WorldDef
     return b2CreateCapsuleShape(body, &definition, &capsule);
 }
 
-[[nodiscard]] ShapeID b2CreateCircleShape(BodyID body,
-                                          const ShapeDef &definition,
-                                          const Circle &circle) NOEXCEPT
+[[nodiscard]] ShapeID createCircleShape(BodyID body, const ShapeDef &definition,
+                                        const Circle &circle) NOEXCEPT
 {
     return b2CreateCircleShape(body, &definition, &circle);
+}
+
+[[nodiscard]] ShapeID createPolygonShape(BodyID body,
+                                         const ShapeDef &definition,
+                                         const Polygon &polygon) NOEXCEPT
+{
+    return b2CreatePolygonShape(body, &definition, &polygon);
 }
 
 [[nodiscard]] WorldID createWorld(const WorldDef &definition) NOEXCEPT
@@ -768,3 +783,34 @@ shapeSensorGetOverlappingShapes(Allocator &allocator, ShapeID sensor) NOEXCEPT
 }
 
 } // namespace b2
+
+/// BodyDef contains a const char* which glaze cannot serialize properly. we
+/// know it is null terminated and static lifetime though, so just convert it to
+/// a string_view
+export template <> struct glz::meta<b2BodyDef>
+{
+    using T = b2BodyDef;
+    static constexpr auto value = glz::object(
+        "type", &T::type,                       //
+        "position", &T::position,               //
+        "rotation", &T::rotation,               //
+        "linearVelocity", &T::linearVelocity,   //
+        "angularVelocity", &T::angularVelocity, //
+        "linearDamping", &T::linearDamping,     //
+        "angularDamping", &T::angularDamping,   //
+        "gravityScale", &T::gravityScale,       //
+        "sleepThreshold", &T::sleepThreshold,   //
+        "name",
+        [](auto &self) {
+            return self.name ? std::string_view{self.name} : std::string_view{};
+        },
+        "userData", &T::userData,                   //
+        "enableSleep", &T::enableSleep,             //
+        "isAwake", &T::isAwake,                     //
+        "fixedRotation", &T::fixedRotation,         //
+        "isBullet", &T::isBullet,                   //
+        "isEnabled", &T::isEnabled,                 //
+        "allowFastRotation", &T::allowFastRotation, //
+        "internalValue", &T::internalValue          //
+    );
+};

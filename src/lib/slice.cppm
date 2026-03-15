@@ -412,7 +412,7 @@ export template <typename T>
 [[nodiscard]] constexpr Bytes reinterpretAsBytes(Slice<T> slice) NOEXCEPT
 {
     return unsafe::rawSlice(
-        reinterpret_cast<u8 *>(slice.uncheckedAddressOfFirstItem()),
+        *reinterpret_cast<u8 *>(slice.uncheckedAddressOfFirstItem()),
         slice.sizeInBytes());
 }
 
@@ -422,7 +422,7 @@ export template <typename T>
 reinterpretAsBytes(Slice<T> slice) NOEXCEPT
 {
     return unsafe::rawSlice(
-        reinterpret_cast<const u8 *>(slice.uncheckedAddressOfFirstItem()),
+        *reinterpret_cast<const u8 *>(slice.uncheckedAddressOfFirstItem()),
         slice.sizeInBytes());
 }
 
@@ -430,7 +430,7 @@ export template <typename T>
 [[nodiscard]] constexpr Slice<T> reinterpretBytesAs(Bytes bytes) NOEXCEPT
 {
     return unsafe::rawSlice(
-        reinterpret_cast<T *>(bytes.uncheckedAddressOfFirstItem()),
+        *reinterpret_cast<T *>(bytes.uncheckedAddressOfFirstItem()),
         bytes.size() / sizeof(T));
 }
 
