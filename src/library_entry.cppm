@@ -31,17 +31,19 @@ extern "C"
 
         lg::info(lg::Category::Gameplay, "gamelib init() called");
         const auto world = World::createWorld({});
-        auto *out = new Context{.world = world,
-                                .floor = world.createBody({
-                                    .type = BodyType::Static,
-                                    .position = Vec2{.x = 0, .y = -10},
-                                    .name = "floor",
-                                }),
-                                .square = world.createBody({
-                                    .type = BodyType::Kinematic,
-                                    .position = Vec2{.x = 0, .y = 10},
-                                    .name = "square",
-                                })};
+        auto *out = new Context{
+            .world = world,
+            .floor = world.createBody({
+                .type = BodyType::Static,
+                .position = Vec2{.x = 0, .y = -10},
+                .name = "floor",
+            }),
+            .square = world.createBody({
+                .type = BodyType::Kinematic,
+                .position = Vec2{.x = 0, .y = 10},
+                .name = "square",
+            }),
+        };
 
         constexpr Polygon squarePolygon = {
             .vertices = {{-1, 1}, {-1, -1}, {1, -1}, {1, 1}},
