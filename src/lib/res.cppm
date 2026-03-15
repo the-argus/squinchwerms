@@ -120,6 +120,51 @@ export template <SimpleType T, ErrorEnum E> class Res<T, E>
         w_assert(this->isSuccess(), "attempt to dereference error Res");
         return std::move(this->m_value.value);
     }
+
+    template <typename Callable>
+        requires std::is_invocable_v<Callable, const T &>
+    constexpr auto map(Callable &&callable) const &NOEXCEPT
+    {
+        using TransformedType = std::invoke_result_t<Callable, const T &>;
+        using ReturnType = Res<TransformedType, E>;
+
+        if (isError()) {
+            return ReturnType(this->error());
+        } else {
+            return ReturnType(std::invoke(std::forward<Callable>(callable),
+                                          this->m_value.value));
+        }
+    }
+
+    template <typename Callable>
+        requires std::is_invocable_v<Callable, T &>
+    constexpr auto map(Callable &&callable) & NOEXCEPT
+    {
+        using TransformedType = std::invoke_result_t<Callable, T &>;
+        using ReturnType = Res<TransformedType, E>;
+
+        if (isError()) {
+            return ReturnType(this->error());
+        } else {
+            return ReturnType(std::invoke(std::forward<Callable>(callable),
+                                          this->m_value.value));
+        }
+    }
+
+    template <typename Callable>
+        requires std::is_invocable_v<Callable, T &>
+    constexpr auto map(Callable &&callable) && NOEXCEPT
+    {
+        using TransformedType = std::invoke_result_t<Callable, T &&>;
+        using ReturnType = Res<TransformedType, E>;
+
+        if (isError()) {
+            return ReturnType(this->error());
+        } else {
+            return ReturnType(std::invoke(std::forward<Callable>(callable),
+                                          std::move(this->m_value.value)));
+        }
+    }
 };
 
 export template <Reference T, ErrorEnum E> class Res<T, E>
@@ -165,6 +210,8 @@ export template <Reference T, ErrorEnum E> class Res<T, E>
     constexpr bool isError() const NOEXCEPT { return m_error != E::Success; }
     constexpr bool isSuccess() const NOEXCEPT { return m_error == E::Success; }
 
+    constexpr E error() const NOEXCEPT { return m_error; }
+
     constexpr Pointer operator->() const NOEXCEPT
     {
         w_assert(this->isSuccess(), "attempt to dereference error Res");
@@ -175,6 +222,21 @@ export template <Reference T, ErrorEnum E> class Res<T, E>
     {
         w_assert(this->isSuccess(), "attempt to dereference error Res");
         return *m_value;
+    }
+
+    template <typename Callable>
+        requires std::is_invocable_v<Callable, T>
+    constexpr auto map(Callable &&callable) const NOEXCEPT
+    {
+        using TransformedType = std::invoke_result_t<Callable, T>;
+        using ReturnType = Res<TransformedType, E>;
+
+        if (isError()) {
+            return ReturnType(this->error());
+        } else {
+            return ReturnType(std::invoke(std::forward<Callable>(callable),
+                                          this->m_value.value));
+        }
     }
 };
 
