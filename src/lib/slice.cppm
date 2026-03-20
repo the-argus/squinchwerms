@@ -248,6 +248,20 @@ export template <typename Viewed> class Slice
     template <typename T> friend constexpr Slice<T> makeNullSlice() NOEXCEPT;
 
     friend struct fmt::formatter<Slice>;
+
+    constexpr value_type *begin() const NOEXCEPT
+    {
+        if (isEmpty())
+            return nullptr;
+        return uncheckedAddressOfFirstItem();
+    }
+
+    constexpr value_type *end() const NOEXCEPT
+    {
+        if (isEmpty())
+            return nullptr;
+        return uncheckedAddressOfFirstItem() + size();
+    }
 };
 
 template <typename Viewed, u64 size> Slice(Viewed (&)[size]) -> Slice<Viewed>;
