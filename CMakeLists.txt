@@ -81,7 +81,7 @@ find_package(Vulkan REQUIRED)
 
 # main needs sdl and imgui because those have some static/global initialization
 # that needs to stick around
-target_link_libraries(${PROJECT_NAME} SDL3::SDL3 imgui::imgui fmt::fmt)
+target_link_libraries(${PROJECT_NAME} SDL3::SDL3 imgui::imgui fmt::fmt box2d::box2d)
 target_link_libraries(
   ${PROJECT_NAME}_lib
   box2d::box2d
