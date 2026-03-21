@@ -17,7 +17,7 @@ template <typename T> constexpr void fillObjectWithDebugBytes(T *object)
     if (not std::is_constant_evaluated()) {
         // memset is not constexpr, involves reinterpreting. allow calls to
         // fillObjectWithDebugBytes to happen in constexpr by doing this
-        ::memset(object, debugByte, sizeof(T));
+        ::memset(static_cast<void *>(object), debugByte, sizeof(T));
     }
     // #endif
 }
