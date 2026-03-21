@@ -26,10 +26,12 @@
     in {
       devShell =
         # gcc 15 segfaults when trying to print the diagnostic for this one error I had
-        (pkgs.mkShell.override {stdenv = pkgs.gcc14Stdenv;})
+        (pkgs.mkShell.override {stdenv = pkgs.llvmPackages_21.stdenv;})
         {
           packages =
             (with pkgs; [
+              clang-tools # to get wrapped variant of clang-scan-deps
+
               (writeShellScriptBin "configure" "cmake --preset dev")
               (writeShellScriptBin "build" "cmake --build build-dev --parallel")
               (writeShellScriptBin "run" "build && gdb build-dev/squinchwerms")
