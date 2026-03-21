@@ -4,6 +4,7 @@ module;
 #include <memory> // addressof
 #include <type_traits>
 #include <utility>
+#include <functional> // std::invoke
 
 export module res;
 

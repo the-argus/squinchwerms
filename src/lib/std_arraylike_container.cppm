@@ -42,9 +42,9 @@ concept StdArraylikeContainer = requires(const T &c, T &nc) {
     {
         nc.data()
     } -> pointer; // allowed to be const, too (std::array<const int>)
-    { c.size() } -> std::same_as<size_t>;
-    { nc.size() } -> std::same_as<size_t>;
-    { std::declval<T &&>().size() } -> std::same_as<size_t>;
+    { c.size() } -> std::same_as<std::size_t>;
+    { nc.size() } -> std::same_as<std::size_t>;
+    { std::declval<T &&>().size() } -> std::same_as<std::size_t>;
 };
 
 export template <typename T, typename Contents>
